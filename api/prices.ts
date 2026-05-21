@@ -33,8 +33,9 @@ export default async function handler(
     return
   }
 
-  const symbols = [...STOCK_SYMBOLS, FX_SYMBOL].join(',')
-  const url = `https://api.twelvedata.com/price?symbol=${encodeURIComponent(symbols)}&apikey=${apiKey}`
+  // Commas must stay literal (Twelve Data batch separator); only encode `/` in forex pair
+  const symbolsParam = [...STOCK_SYMBOLS, FX_SYMBOL.replace('/', '%2F')].join(',')
+  const url = `https://api.twelvedata.com/price?symbol=${symbolsParam}&apikey=${apiKey}`
 
   let raw: BatchResponse
   try {
