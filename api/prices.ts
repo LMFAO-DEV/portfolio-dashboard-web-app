@@ -1,4 +1,4 @@
-import type { IncomingMessage, ServerResponse } from 'node:http'
+import type { IncomingMessage, ServerResponse } from 'http'
 
 const STOCK_SYMBOLS = ['MSFT', 'AMZN', 'META', 'ORCL', 'COST', 'CRWV', 'NBIS', 'VOO', 'SCHD', 'VXUS']
 const FX_SYMBOL = 'USD/THB'
