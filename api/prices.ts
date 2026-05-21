@@ -1,70 +1,71 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
-const SYMBOLS = [
-  'MSFT', 'AMZN', 'META', 'ORCL', 'COST', 'CRWV',
-  'NBIS', 'VOO', 'SCHD', 'VXUS', 'USDTHB=X',
-]
+const STOCK_SYMBOLS = ['MSFT', 'AMZN', 'META', 'ORCL', 'COST', 'CRWV', 'NBIS', 'VOO', 'SCHD', 'VXUS']
+const FX_SYMBOL = 'USD/THB'
 
-// Encode `=` in tickers (USDTHB=X) but keep commas literal — Yahoo Finance
-// parses comma-separated symbols and needs the = sign percent-encoded.
-const SYMBOLS_PARAM = SYMBOLS.map((s) => s.replace(/=/g, '%3D')).join(',')
-
-const YAHOO_URL =
-  `https://query1.finance.yahoo.com/v7/finance/quote` +
-  `?symbols=${SYMBOLS_PARAM}&fields=regularMarketPrice,currency&lang=en-US&region=US`
-
-// Browser-like headers — Yahoo Finance rejects bare Node.js User-Agents
-const UPSTREAM_HEADERS: Record<string, string> = {
-  'User-Agent':
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
-    '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  'Accept': 'application/json, text/plain, */*',
-  'Accept-Language': 'en-US,en;q=0.9',
-  'Origin': 'https://finance.yahoo.com',
-  'Referer': 'https://finance.yahoo.com/',
+interface TwelveDataPriceEntry {
+  price?: string
+  code?: number
+  message?: string
 }
 
-function send(res: ServerResponse, status: number, body: unknown, extra?: Record<string, string>): void {
-  const payload = JSON.stringify(body)
+type BatchResponse = Record<string, TwelveDataPriceEntry>
+
+function send(res: ServerResponse, status: number, body: unknown): void {
   res.writeHead(status, {
     'Content-Type': 'application/json',
-    'Cache-Control': status === 200
-      ? 'public, s-maxage=60, stale-while-revalidate=900'
-      : 'no-store',
+    'Cache-Control':
+      status === 200
+        ? 'public, s-maxage=60, stale-while-revalidate=900'
+        : 'no-store',
     'Access-Control-Allow-Origin': '*',
-    ...extra,
   })
-  res.end(payload)
+  res.end(JSON.stringify(body))
 }
 
 export default async function handler(
   _req: IncomingMessage,
   res: ServerResponse,
 ): Promise<void> {
-  let upstream: Response
+  const apiKey = process.env.TWELVE_DATA_API_KEY
+  if (!apiKey) {
+    send(res, 500, { error: 'TWELVE_DATA_API_KEY env var is not set' })
+    return
+  }
+
+  const symbols = [...STOCK_SYMBOLS, FX_SYMBOL].join(',')
+  const url = `https://api.twelvedata.com/price?symbol=${encodeURIComponent(symbols)}&apikey=${apiKey}`
+
+  let raw: BatchResponse
   try {
-    upstream = await fetch(YAHOO_URL, {
-      headers: UPSTREAM_HEADERS,
-      signal: AbortSignal.timeout(9_000),
-    })
+    const resp = await fetch(url, { signal: AbortSignal.timeout(10_000) })
+    if (!resp.ok) {
+      send(res, 502, { error: `Twelve Data returned HTTP ${resp.status}` })
+      return
+    }
+    raw = (await resp.json()) as BatchResponse
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     send(res, 502, { error: `Price fetch failed: ${msg}` })
     return
   }
 
-  if (!upstream.ok) {
-    send(res, upstream.status, { error: `Yahoo returned HTTP ${upstream.status}` })
-    return
+  const prices: Record<string, number> = {}
+  let fxRate = 0
+
+  for (const sym of STOCK_SYMBOLS) {
+    const entry = raw[sym]
+    if (entry?.price) {
+      const n = parseFloat(entry.price)
+      if (isFinite(n)) prices[sym] = n
+    }
   }
 
-  let data: unknown
-  try {
-    data = await upstream.json()
-  } catch {
-    send(res, 502, { error: 'Yahoo response was not valid JSON' })
-    return
+  const fxEntry = raw[FX_SYMBOL]
+  if (fxEntry?.price) {
+    const n = parseFloat(fxEntry.price)
+    if (isFinite(n)) fxRate = n
   }
 
-  send(res, 200, data)
+  send(res, 200, { prices, fxRate })
 }
