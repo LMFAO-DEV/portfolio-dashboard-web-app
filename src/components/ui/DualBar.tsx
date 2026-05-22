@@ -6,24 +6,24 @@ interface DualBarProps {
 
 export function DualBar({ actual, target, tone = 'success' }: DualBarProps) {
   const barColor = {
-    success: 'bg-green-500',
+    success: 'bg-gain',
     warning: 'bg-yellow-400',
-    danger: 'bg-red-500',
+    danger: 'bg-loss',
   }[tone]
 
   const clampedActual = Math.min(Math.max(actual, 0), 100)
   const clampedTarget = Math.min(Math.max(target, 0), 100)
 
   return (
-    <div className="relative h-3 w-full rounded-full bg-gray-100 overflow-visible">
+    <div className="relative h-2 w-full rounded-full bg-surface-border overflow-visible">
       <div
-        className={`h-full rounded-full transition-all ${barColor}`}
+        className={`h-full rounded-full transition-all ${barColor} opacity-80`}
         style={{ width: `${clampedActual}%` }}
       />
       {/* target marker */}
       <div
-        className="absolute top-0 h-full w-0.5 bg-red-500"
-        style={{ left: `${clampedTarget}%`, transform: 'translateX(-50%)' }}
+        className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-muted rounded-sm"
+        style={{ left: `${clampedTarget}%`, transform: 'translateX(-50%) translateY(-50%)' }}
       />
     </div>
   )

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git push *)",
+      "Bash(git commit -m ' *)",
+      "Bash(curl -s \"https://api.twelvedata.com/price?symbol=MSFT,AMZN,USD%2FTHB&apikey=5ea82ce010014b9f957714f0d08ab0c5\")",
+      "Bash(curl -s \"https://api.twelvedata.com/price?symbol=MSFT,AMZN,META,ORCL,COST,CRWV,NBIS,VOO,SCHD,VXUS,USD%2FTHB&apikey=5ea82ce010014b9f957714f0d08ab0c5\")",
+      "Bash(curl -s 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=MSFT,AMZN&fields=regularMarketPrice&lang=en-US&region=US' -H 'User-Agent: Mozilla/5.0 \\(Macintosh; Intel Mac OS X 10_15_7\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/124.0.0.0 Safari/537.36' -H 'Referer: https://finance.yahoo.com/')",
+      "Bash(curl -s 'https://query1.finance.yahoo.com/v8/finance/chart/MSFT?interval=1d&range=1d' -H 'User-Agent: Mozilla/5.0 \\(Macintosh; Intel Mac OS X 10_15_7\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/124.0.0.0 Safari/537.36' -H 'Referer: https://finance.yahoo.com/')",
+      "Bash(curl -s https://query2.finance.yahoo.com/v8/finance/chart/MSFT -H 'User-Agent: Mozilla/5.0 \\(Macintosh; Intel Mac OS X 10_15_7\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/124.0.0.0 Safari/537.36')",
+      "Bash(curl -s 'https://query1.finance.yahoo.com/v8/finance/chart/MSFT,AMZN?interval=1d&range=1d' -H 'User-Agent: Mozilla/5.0 \\(Macintosh; Intel Mac OS X 10_15_7\\) AppleWebKit/537.36')",
+      "Bash(curl -s 'https://query1.finance.yahoo.com/v8/finance/chart/USDTHB%3DX?interval=1d&range=1d' -H 'User-Agent: Mozilla/5.0 \\(Macintosh; Intel Mac OS X 10_15_7\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/124.0.0.0 Safari/537.36' -H 'Referer: https://finance.yahoo.com/')",
+      "Bash(npm run *)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -s \"http://localhost:5173/api/prices?symbols=MSFT,VOO,USDTHB%3DX\")"
+    ]
+  }
+}

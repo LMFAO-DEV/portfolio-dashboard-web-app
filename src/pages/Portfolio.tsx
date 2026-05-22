@@ -5,8 +5,8 @@ import { fmtThb, fmtThbRaw, fmtUsd, fmtPct, fmtPctRaw, fmtTime } from '../utils/
 import { copyToClipboard, buildCopyForClaude } from '../utils/copyForClaude'
 
 const SEG_COLORS = [
-  '#4f46e5', '#0ea5e9', '#10b981', '#f59e0b',
-  '#ef4444', '#8b5cf6', '#64748b',
+  '#3861fb', '#16c784', '#f59e0b', '#8b5cf6',
+  '#0ea5e9', '#ea3943', '#64748b',
 ]
 
 interface PortfolioProps {
@@ -22,23 +22,56 @@ function MetricTile({
   label, value, sub, className = '',
 }: { label: string; value: React.ReactNode; sub?: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-white border border-gray-200 rounded-xl p-4 ${className}`}>
-      <p className="text-xs text-gray-500 font-medium">{label}</p>
-      <div className="mt-1 text-xl font-bold font-mono text-gray-900 truncate">{value}</div>
-      {sub && <div className="mt-0.5 text-xs text-gray-400">{sub}</div>}
+    <div className={`bg-surface border border-surface-border rounded-xl p-4 ${className}`}>
+      <p className="text-xs text-muted font-medium uppercase tracking-wide">{label}</p>
+      <div className="mt-1.5 text-xl font-bold font-mono text-white truncate">{value}</div>
+      {sub && <div className="mt-0.5 text-xs text-faint">{sub}</div>}
     </div>
   )
 }
 
-function PnlCell({ value, pct }: { value: string; pct: string }) {
+function PnlCell({ value, pct, isLoading }: { value: string; pct: string; isLoading?: boolean }) {
+  if (isLoading) {
+    return (
+      <td className="px-3 py-3 whitespace-nowrap">
+        <Skeleton width="w-16" height="h-4" />
+      </td>
+    )
+  }
   const isPos = value.startsWith('+')
   const isNeg = value.startsWith('−')
-  const cls = isPos ? 'text-green-700' : isNeg ? 'text-red-600' : 'text-gray-700'
+  const cls = isPos ? 'text-gain' : isNeg ? 'text-loss' : 'text-muted'
+  const arrow = isPos ? '▲' : isNeg ? '▼' : ''
   return (
-    <td className={`px-3 py-2 font-mono text-sm whitespace-nowrap ${cls}`}>
-      <div>{value}</div>
-      <div className="text-xs opacity-75">{pct}</div>
+    <td className={`px-3 py-3 font-mono text-sm whitespace-nowrap ${cls}`}>
+      <div className="flex items-center gap-1">
+        {arrow && <span className="text-xs">{arrow}</span>}
+        <span>{value}</span>
+      </div>
+      <div className="text-xs opacity-70 mt-0.5">{pct}</div>
     </td>
+  )
+}
+
+function TickerBadge({ ticker }: { ticker: string }) {
+  const colors: Record<string, string> = {
+    MSFT: 'bg-blue-500/15 text-blue-400',
+    AMZN: 'bg-amber-500/15 text-amber-400',
+    META: 'bg-blue-600/15 text-blue-300',
+    ORCL: 'bg-red-500/15 text-red-400',
+    COST: 'bg-emerald-500/15 text-emerald-400',
+    CRWV: 'bg-violet-500/15 text-violet-400',
+    NBIS: 'bg-slate-500/15 text-slate-400',
+    VOO: 'bg-indigo-500/15 text-indigo-400',
+    SCHD: 'bg-teal-500/15 text-teal-400',
+    VXUS: 'bg-cyan-500/15 text-cyan-400',
+    'MTS-GOLD': 'bg-yellow-500/15 text-yellow-400',
+  }
+  const cls = colors[ticker] ?? 'bg-white/10 text-white'
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-bold ${cls}`}>
+      {ticker}
+    </span>
   )
 }
 
@@ -104,7 +137,7 @@ export function Portfolio({
     {
       ticker: t.cashReserve,
       pct: satTotalThb > 0 ? (satelliteCashThb / satTotalThb) * 100 : 0,
-      color: '#64748b',
+      color: '#2b2f45',
     },
   ]
 
@@ -122,16 +155,19 @@ export function Portfolio({
   const Num = ({ v }: { v: React.ReactNode }) =>
     isLoading ? <Skeleton width="w-20" height="h-5" /> : <>{v}</>
 
+  const thClass = 'px-3 py-2.5 text-left text-xs font-medium text-faint uppercase tracking-wide whitespace-nowrap'
+  const tdBase = 'px-3 py-3 text-sm whitespace-nowrap'
+
   return (
     <div className="p-4 space-y-4 max-w-screen-xl mx-auto">
       {/* Error banner */}
       {isError && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-2 rounded-lg">
+        <div className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm px-4 py-2.5 rounded-xl">
           {t.fetchError}
         </div>
       )}
 
-      {/* Summary bar */}
+      {/* Summary metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <MetricTile
           label={t.totalValue}
@@ -141,8 +177,8 @@ export function Portfolio({
           label={t.profitLoss}
           value={
             <Num v={
-              <span className={totalPnlThb >= 0 ? 'text-green-700' : 'text-red-600'}>
-                {fmtThb(totalPnlThb)}
+              <span className={totalPnlThb >= 0 ? 'text-gain' : 'text-loss'}>
+                {totalPnlThb >= 0 ? '▲ ' : '▼ '}{fmtThb(totalPnlThb)}
               </span>
             } />
           }
@@ -151,7 +187,7 @@ export function Portfolio({
           label={t.pnlPct}
           value={
             <Num v={
-              <span className={totalPnlPct >= 0 ? 'text-green-700' : 'text-red-600'}>
+              <span className={totalPnlPct >= 0 ? 'text-gain' : 'text-loss'}>
                 {fmtPct(totalPnlPct)}
               </span>
             } />
@@ -167,56 +203,61 @@ export function Portfolio({
       {/* Satellite + Weight side by side */}
       <div className="flex flex-col xl:flex-row gap-4">
         {/* Satellite Holdings Table */}
-        <div className="flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100">
-            <h2 className="font-semibold text-sm text-gray-900">{t.satelliteHoldings}</h2>
-            <p className="text-xs text-gray-400">{fmtThbRaw(satTotalThb, true)}</p>
+        <div className="flex-1 bg-surface border border-surface-border rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-surface-border flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold text-sm text-white">{t.satelliteHoldings}</h2>
+              <p className="text-xs text-faint mt-0.5">{fmtThbRaw(satTotalThb, true)}</p>
+            </div>
+            <span className="text-xs px-2 py-1 rounded-full bg-accent/15 text-accent border border-accent/20 font-medium">Satellite</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100">
+                <tr className="border-b border-surface-border bg-surface-raised/50">
                   {[t.colTicker, t.colShares, t.colCost, t.colPrice, t.colMktVal, t.colPnl].map((h) => (
-                    <th key={h} className="px-3 py-2 text-left text-xs font-medium text-gray-500 whitespace-nowrap">
-                      {h}
-                    </th>
+                    <th key={h} className={thClass}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {satRows.map((r) => {
-                  const rowBg = !isLoading && r.shares > 0
-                    ? r.pnlThb > 0 ? 'bg-[#d8ecd8]' : r.pnlThb < 0 ? 'bg-[#f4d6cf]' : ''
-                    : ''
-                  return (
-                    <tr key={r.ticker} className={`border-b border-gray-50 last:border-0 ${rowBg}`}>
-                      <td className="px-3 py-2 font-mono font-bold text-gray-900">{r.ticker}</td>
-                      <td className="px-3 py-2 font-mono text-gray-700 whitespace-nowrap">
-                        {r.shares ? r.shares.toFixed(4) : '—'}
-                      </td>
-                      <td className="px-3 py-2 font-mono text-gray-500 whitespace-nowrap">
-                        {fmtUsd(r.costUsd ?? 0)}
-                      </td>
-                      <td className="px-3 py-2 font-mono font-semibold text-gray-900 whitespace-nowrap">
-                        {isLoading ? <Skeleton width="w-16" height="h-4" /> : fmtUsd(r.price ?? 0)}
-                      </td>
-                      <td className="px-3 py-2 font-mono text-gray-700 whitespace-nowrap">
-                        {isLoading ? <Skeleton width="w-20" height="h-4" /> : fmtThbRaw(r.mktValThb, true)}
-                      </td>
-                      <PnlCell
-                        value={isLoading ? '—' : fmtThb(r.pnlThb)}
-                        pct={isLoading ? '—' : fmtPct(r.pnlPct)}
-                      />
-                    </tr>
-                  )
-                })}
+                {satRows.map((r) => (
+                  <tr
+                    key={r.ticker}
+                    className="border-b border-surface-border/50 last:border-0 hover:bg-surface-raised/60 transition-colors"
+                  >
+                    <td className={`${tdBase} font-mono font-bold`}>
+                      {r.shares > 0
+                        ? <TickerBadge ticker={r.ticker} />
+                        : <span className="text-faint font-mono text-xs">{r.ticker}</span>
+                      }
+                    </td>
+                    <td className={`${tdBase} font-mono text-muted`}>
+                      {r.shares ? r.shares.toFixed(4) : '—'}
+                    </td>
+                    <td className={`${tdBase} font-mono text-faint`}>
+                      {fmtUsd(r.costUsd ?? 0)}
+                    </td>
+                    <td className={`${tdBase} font-mono font-semibold text-white`}>
+                      {isLoading ? <Skeleton width="w-16" height="h-4" /> : fmtUsd(r.price ?? 0)}
+                    </td>
+                    <td className={`${tdBase} font-mono text-muted`}>
+                      {isLoading ? <Skeleton width="w-20" height="h-4" /> : fmtThbRaw(r.mktValThb, true)}
+                    </td>
+                    <PnlCell
+                      value={fmtThb(r.pnlThb)}
+                      pct={fmtPct(r.pnlPct)}
+                      isLoading={isLoading && r.shares > 0}
+                    />
+                  </tr>
+                ))}
                 {/* Cash row */}
-                <tr className="border-t border-gray-200 bg-gray-50">
-                  <td className="px-3 py-2 font-semibold text-gray-700 text-sm" colSpan={4}>
+                <tr className="border-t border-surface-border bg-surface-raised/40">
+                  <td className={`${tdBase} text-muted font-medium`} colSpan={4}>
                     {t.cashReserve}
                   </td>
-                  <td className="px-3 py-2 font-mono text-gray-700">{fmtThbRaw(satelliteCashThb)}</td>
-                  <td className="px-3 py-2 text-xs text-gray-500 font-mono">
+                  <td className={`${tdBase} font-mono text-muted`}>{fmtThbRaw(satelliteCashThb)}</td>
+                  <td className={`${tdBase} text-xs text-faint font-mono`}>
                     {satTotalThb ? fmtPctRaw((satelliteCashThb / satTotalThb) * 100) : '—'}
                   </td>
                 </tr>
@@ -226,31 +267,39 @@ export function Portfolio({
         </div>
 
         {/* Weight Distribution */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 xl:w-72 shrink-0">
-          <h2 className="font-semibold text-sm text-gray-900 mb-3">{t.weightDist}</h2>
+        <div className="bg-surface border border-surface-border rounded-xl p-4 xl:w-72 shrink-0">
+          <h2 className="font-semibold text-sm text-white mb-3">{t.weightDist}</h2>
           {/* Stacked bar */}
-          <div className="flex h-7 rounded-lg overflow-hidden border border-gray-100">
+          <div className="flex h-6 rounded-lg overflow-hidden border border-surface-border gap-px">
             {weightSegs.map((s) => (
               <div
                 key={s.ticker}
                 style={{ width: `${s.pct}%`, backgroundColor: s.color }}
-                className="flex items-center justify-center text-white text-xs font-medium overflow-hidden shrink-0"
+                className="flex items-center justify-center overflow-hidden shrink-0"
                 title={`${s.ticker}: ${s.pct.toFixed(1)}%`}
               />
             ))}
           </div>
           {/* Legend */}
-          <div className="mt-3 space-y-1.5">
+          <div className="mt-3 space-y-2">
             {weightSegs.map((s) => (
-              <div key={s.ticker} className="flex items-center justify-between text-xs">
+              <div key={s.ticker} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span
-                    className="w-3 h-3 rounded-sm shrink-0"
+                    className="w-2.5 h-2.5 rounded-sm shrink-0"
                     style={{ backgroundColor: s.color }}
                   />
-                  <span className="text-gray-700 font-mono font-medium">{s.ticker}</span>
+                  <span className="text-xs text-muted font-mono font-medium">{s.ticker}</span>
                 </div>
-                <span className="text-gray-500 font-mono">{s.pct.toFixed(1)}%</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-16 h-1.5 bg-surface-border rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${s.pct}%`, backgroundColor: s.color }}
+                    />
+                  </div>
+                  <span className="text-xs text-faint font-mono w-10 text-right">{s.pct.toFixed(1)}%</span>
+                </div>
               </div>
             ))}
           </div>
@@ -258,52 +307,62 @@ export function Portfolio({
       </div>
 
       {/* Core Holdings Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100">
-          <h2 className="font-semibold text-sm text-gray-900">{t.coreHoldings}</h2>
-          <p className="text-xs text-gray-400">{fmtThbRaw(coreTotalThb, true)}</p>
+      <div className="bg-surface border border-surface-border rounded-xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-surface-border flex items-center justify-between">
+          <div>
+            <h2 className="font-semibold text-sm text-white">{t.coreHoldings}</h2>
+            <p className="text-xs text-faint mt-0.5">{fmtThbRaw(coreTotalThb, true)}</p>
+          </div>
+          <span className="text-xs px-2 py-1 rounded-full bg-gain/10 text-gain border border-gain/20 font-medium">Core</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-surface-border bg-surface-raised/50">
                 {[t.colTicker, t.colShares, t.colCost, t.colPrice, t.colMktVal, t.colPnl].map((h) => (
-                  <th key={h} className="px-3 py-2 text-left font-medium text-gray-500 whitespace-nowrap">
-                    {h}
-                  </th>
+                  <th key={h} className={thClass}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {coreRows.map((r) => {
                 const isGold = r.isTHB
-                const rowBg = !isLoading && r.shares > 0
-                  ? r.pnlThb > 0 ? 'bg-[#d8ecd8]' : r.pnlThb < 0 ? 'bg-[#f4d6cf]' : ''
-                  : ''
                 return (
-                  <tr key={r.ticker} className={`border-b border-gray-50 last:border-0 ${rowBg}`}>
-                    <td className="px-3 py-2 font-mono font-bold text-gray-900">{r.ticker}</td>
-                    <td className="px-3 py-2 font-mono text-gray-700">
+                  <tr
+                    key={r.ticker}
+                    className="border-b border-surface-border/50 last:border-0 hover:bg-surface-raised/60 transition-colors"
+                  >
+                    <td className={`${tdBase} font-mono font-bold`}>
+                      {r.shares > 0
+                        ? <TickerBadge ticker={r.ticker} />
+                        : <span className="text-faint font-mono text-xs">{r.ticker}</span>
+                      }
+                    </td>
+                    <td className={`${tdBase} font-mono text-muted`}>
                       {r.shares ? r.shares.toFixed(isGold ? 0 : 4) : '—'}
                     </td>
-                    <td className="px-3 py-2 font-mono text-gray-500">
+                    <td className={`${tdBase} font-mono text-faint`}>
                       {isGold ? fmtThbRaw(r.costThb ?? 0) : fmtUsd(r.costUsd ?? 0)}
                     </td>
-                    <td className="px-3 py-2 font-mono font-semibold text-gray-900">
+                    <td className={`${tdBase} font-mono font-semibold text-white`}>
                       {isLoading && !isGold
                         ? <Skeleton width="w-14" height="h-3" />
                         : isGold
-                          ? <span title={`NAV ${t.lastUpdated} ${mtsGoldNav.updatedAt}`}>{fmtThbRaw(r.price ?? 0)} <span className="text-gray-400 font-normal">NAV</span></span>
+                          ? <span title={`NAV ${t.lastUpdated} ${mtsGoldNav.updatedAt}`}>
+                              {fmtThbRaw(r.price ?? 0)}
+                              <span className="text-faint font-normal text-xs ml-1">NAV</span>
+                            </span>
                           : fmtUsd(r.price ?? 0)}
                     </td>
-                    <td className="px-3 py-2 font-mono text-gray-700">
+                    <td className={`${tdBase} font-mono text-muted`}>
                       {isLoading && !isGold
                         ? <Skeleton width="w-16" height="h-3" />
                         : fmtThbRaw(r.mktValThb, true)}
                     </td>
                     <PnlCell
-                      value={isLoading && !isGold ? '—' : fmtThb(r.pnlThb)}
-                      pct={isLoading && !isGold ? '—' : fmtPct(r.pnlPct)}
+                      value={fmtThb(r.pnlThb)}
+                      pct={fmtPct(r.pnlPct)}
+                      isLoading={isLoading && !isGold}
                     />
                   </tr>
                 )
@@ -313,14 +372,14 @@ export function Portfolio({
         </div>
       </div>
 
-      {/* Footer: last updated + Copy for Claude */}
+      {/* Footer */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-faint">
           {t.lastUpdated}: {lastUpdatedTime} · {t.autoEvery15}
         </p>
         <button
           onClick={handleCopy}
-          className="w-full sm:w-auto px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+          className="w-full sm:w-auto px-4 py-2 rounded-lg border border-surface-border text-sm text-muted hover:text-white hover:bg-surface-raised transition-colors font-medium"
         >
           {t.btnCopyForClaude}
         </button>

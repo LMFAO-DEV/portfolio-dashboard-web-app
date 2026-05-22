@@ -2,22 +2,9 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Holding, FxRate, MtsGoldNav, DcaSettings, Price, Lang } from '../types'
 
-const DEFAULT_SATELLITE: Holding[] = [
-  { ticker: 'MSFT', shares: 3.83373, costUsd: 393.25 },
-  { ticker: 'AMZN', shares: 7.22371, costUsd: 207.71 },
-  { ticker: 'META', shares: 3.38266, costUsd: 591.52 },
-  { ticker: 'ORCL', shares: 6.64523, costUsd: 150.64 },
-  { ticker: 'COST', shares: 0.46556, costUsd: 860.10 },
-  { ticker: 'CRWV', shares: 4.0, costUsd: 84.59 },
-  { ticker: 'NBIS', shares: 0, costUsd: 0 },
-]
+const DEFAULT_SATELLITE: Holding[] = []
 
-const DEFAULT_CORE: Holding[] = [
-  { ticker: 'VOO', shares: 3.7518, costUsd: 594.58 },
-  { ticker: 'SCHD', shares: 43.58, costUsd: 25.55 },
-  { ticker: 'VXUS', shares: 0, costUsd: 0 },
-  { ticker: 'MTS-GOLD', shares: 1, costThb: 10030, isTHB: true },
-]
+const DEFAULT_CORE: Holding[] = []
 
 const DEFAULT_MTS_GOLD_NAV: MtsGoldNav = {
   value: 9652,
@@ -92,7 +79,7 @@ export const usePortfolioStore = create<PortfolioStore>()(
       mtsGoldNav: DEFAULT_MTS_GOLD_NAV,
       setMtsGoldNav: (mtsGoldNav) => set({ mtsGoldNav }),
 
-      satelliteCashThb: 160000,
+      satelliteCashThb: 0,
       setSatelliteCashThb: (satelliteCashThb) => set({ satelliteCashThb }),
 
       dca: DEFAULT_DCA,
@@ -109,12 +96,12 @@ export const usePortfolioStore = create<PortfolioStore>()(
           satellite: DEFAULT_SATELLITE,
           core: DEFAULT_CORE,
           mtsGoldNav: DEFAULT_MTS_GOLD_NAV,
-          satelliteCashThb: 160000,
+          satelliteCashThb: 0,
           dca: DEFAULT_DCA,
           prices: {},
           fxRate: { rate: 0, fetchedAt: '' },
         }),
     }),
-    { name: 'portfolio-state' },
+    { name: 'portfolio-state-v2' },
   ),
 )

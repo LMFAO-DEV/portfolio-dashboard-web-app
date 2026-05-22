@@ -39,21 +39,24 @@ function AllocationRow({ name, target, actual, totalThb, t }: AllocationRowProps
   const actionThb = Math.abs(gap / 100) * totalThb
 
   return (
-    <div className="py-3 border-b border-gray-50 last:border-0">
-      <div className="flex items-center justify-between mb-1.5">
+    <div className="py-3 border-b border-surface-border/50 last:border-0">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="font-mono font-semibold text-sm text-gray-900">{name}</span>
-          <span className="text-xs text-gray-400">target {target}%</span>
+          <span className="font-mono font-semibold text-sm text-white">{name}</span>
+          <span className="text-xs text-faint">target {target}%</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-mono text-sm font-bold text-gray-900">{fmtPctRaw(actual)}</span>
+          <span className="font-mono text-sm font-bold text-white">{fmtPctRaw(actual)}</span>
           <Badge variant={variant} size="sm">{label}</Badge>
         </div>
       </div>
       <DualBar actual={actual} target={target} tone={tone} />
       {Math.abs(gap) > 3 && (
-        <p className="mt-1 text-xs text-gray-500">
-          → {gap < 0 ? t.buy : t.trim} {fmtThbRaw(actionThb, true)}
+        <p className="mt-1.5 text-xs text-faint">
+          → {gap < 0
+            ? <span className="text-gain">{t.buy}</span>
+            : <span className="text-loss">{t.trim}</span>
+          } {fmtThbRaw(actionThb, true)}
         </p>
       )}
     </div>
@@ -74,7 +77,6 @@ export function Rebalance({ prices, fxRate }: RebalanceProps) {
   const mtsGoldNav = usePortfolioStore((s) => s.mtsGoldNav)
 
   const { coreRows, coreTotal, satBuckets, satTotal, total, actions } = useMemo(() => {
-    // Core values
     const coreRows = core.map((h) => {
       const valThb = h.isTHB
         ? h.shares * mtsGoldNav.value
@@ -83,7 +85,6 @@ export function Rebalance({ prices, fxRate }: RebalanceProps) {
     })
     const coreTotal = coreRows.reduce((s, r) => s + r.valThb, 0)
 
-    // Satellite buckets
     const coreGrowthThb = satellite
       .filter((h) => CORE_GROWTH_TICKERS.includes(h.ticker))
       .reduce((s, h) => s + h.shares * (prices[h.ticker] ?? 0) * fxRate, 0)
@@ -101,7 +102,6 @@ export function Rebalance({ prices, fxRate }: RebalanceProps) {
 
     const total = coreTotal + satTotal
 
-    // Build actions: core holdings
     const actions: { type: 'buy' | 'trim'; asset: string; amtThb: number; reason: string }[] = []
 
     for (const [ticker, targetPct] of Object.entries(CORE_TARGETS)) {
@@ -119,7 +119,6 @@ export function Rebalance({ prices, fxRate }: RebalanceProps) {
       }
     }
 
-    // Satellite buckets actions
     for (const b of satBuckets) {
       const actual = satTotal > 0 ? (b.valThb / satTotal) * 100 : 0
       const gap = actual - b.target
@@ -147,42 +146,44 @@ export function Rebalance({ prices, fxRate }: RebalanceProps) {
 
   return (
     <div className="p-4 space-y-4 max-w-screen-xl mx-auto">
-      <h1 className="font-bold text-lg text-gray-900">{t.rebalanceTracker}</h1>
+      <h1 className="font-bold text-lg text-white">{t.rebalanceTracker}</h1>
 
       {/* Split overview */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <p className="text-xs text-gray-500">{t.corePort}</p>
-          <p className="text-xl font-bold font-mono text-gray-900 mt-1">{fmtThbRaw(coreTotal, true)}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{fmtPctRaw(corePct)} of total</p>
+        <div className="bg-surface border border-surface-border rounded-xl p-4">
+          <p className="text-xs text-muted uppercase tracking-wide">{t.corePort}</p>
+          <p className="text-xl font-bold font-mono text-white mt-1.5">{fmtThbRaw(coreTotal, true)}</p>
+          <p className="text-xs text-faint mt-0.5">{fmtPctRaw(corePct)} of total</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <p className="text-xs text-gray-500">{t.satellitePort}</p>
-          <p className="text-xl font-bold font-mono text-gray-900 mt-1">{fmtThbRaw(satTotal, true)}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{fmtPctRaw(satPct)} of total</p>
+        <div className="bg-surface border border-surface-border rounded-xl p-4">
+          <p className="text-xs text-muted uppercase tracking-wide">{t.satellitePort}</p>
+          <p className="text-xl font-bold font-mono text-white mt-1.5">{fmtThbRaw(satTotal, true)}</p>
+          <p className="text-xs text-faint mt-0.5">{fmtPctRaw(satPct)} of total</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
+        <div className="bg-surface border border-surface-border rounded-xl p-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-gray-500">{t.portSplit}</p>
+            <p className="text-xs text-muted uppercase tracking-wide">{t.portSplit}</p>
             <Badge variant={splitTone} size="sm">{splitLabel}</Badge>
           </div>
-          <p className="text-lg font-bold font-mono text-gray-900 mt-1">
+          <p className="text-lg font-bold font-mono text-white mt-1.5">
             {corePct.toFixed(0)}:{satPct.toFixed(0)}
           </p>
-          <div className="mt-2 relative h-2.5 bg-gray-100 rounded-full overflow-visible">
-            <div className="h-full bg-blue-500 rounded-l-full" style={{ width: `${corePct}%` }} />
-            <div className="absolute top-0 h-full w-0.5 bg-red-500" style={{ left: '50%' }} />
+          <div className="mt-2 relative h-2 bg-surface-border rounded-full overflow-visible">
+            <div className="h-full bg-accent rounded-l-full" style={{ width: `${corePct}%` }} />
+            <div className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-loss rounded-sm" style={{ left: '50%' }} />
           </div>
-          <p className="text-xs text-gray-400 mt-0.5">Target 50:50</p>
+          <p className="text-xs text-faint mt-1">Target 50:50</p>
         </div>
       </div>
 
       {/* Core + Satellite panels */}
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Core Panel */}
-        <div className="flex-1 bg-white border border-gray-200 rounded-xl p-4">
-          <h3 className="font-semibold text-sm text-gray-900 mb-1">{t.coreAlloc}</h3>
-          <p className="text-xs text-gray-400 mb-3">Total: {fmtThbRaw(coreTotal, true)}</p>
+        <div className="flex-1 bg-surface border border-surface-border rounded-xl p-4">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="font-semibold text-sm text-white">{t.coreAlloc}</h3>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-gain/10 text-gain border border-gain/20">Core</span>
+          </div>
+          <p className="text-xs text-faint mb-4">Total: {fmtThbRaw(coreTotal, true)}</p>
           {Object.entries(CORE_TARGETS).map(([ticker, targetPct]) => {
             const valThb = coreRows.find((r) => r.ticker === ticker)?.valThb ?? 0
             const actual = coreTotal > 0 ? (valThb / coreTotal) * 100 : 0
@@ -200,10 +201,12 @@ export function Rebalance({ prices, fxRate }: RebalanceProps) {
           })}
         </div>
 
-        {/* Satellite Panel */}
-        <div className="flex-1 bg-white border border-gray-200 rounded-xl p-4">
-          <h3 className="font-semibold text-sm text-gray-900 mb-1">{t.satelliteAlloc}</h3>
-          <p className="text-xs text-gray-400 mb-3">Total: {fmtThbRaw(satTotal, true)}</p>
+        <div className="flex-1 bg-surface border border-surface-border rounded-xl p-4">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="font-semibold text-sm text-white">{t.satelliteAlloc}</h3>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">Satellite</span>
+          </div>
+          <p className="text-xs text-faint mb-4">Total: {fmtThbRaw(satTotal, true)}</p>
           {satBuckets.map((b) => {
             const actual = satTotal > 0 ? (b.valThb / satTotal) * 100 : 0
             return (
@@ -222,20 +225,26 @@ export function Rebalance({ prices, fxRate }: RebalanceProps) {
       </div>
 
       {/* Action List */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
-        <h3 className="font-semibold text-sm text-gray-900 mb-3">{t.actionList}</h3>
+      <div className="bg-surface border border-surface-border rounded-xl p-4">
+        <h3 className="font-semibold text-sm text-white mb-3">{t.actionList}</h3>
         {actions.length === 0 ? (
-          <p className="text-sm text-green-700">{t.noActionNeeded}</p>
+          <p className="text-sm text-gain flex items-center gap-2">
+            <span>✓</span> {t.noActionNeeded}
+          </p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1">
             {actions.map((a, i) => (
-              <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-                <span className={`px-2 py-0.5 rounded text-xs font-bold ${a.type === 'buy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`}>
+              <div key={i} className="flex items-center gap-3 py-2.5 border-b border-surface-border/50 last:border-0 hover:bg-surface-raised/40 rounded-lg px-2 transition-colors">
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                  a.type === 'buy'
+                    ? 'bg-gain/10 text-gain border-gain/20'
+                    : 'bg-loss/10 text-loss border-loss/20'
+                }`}>
                   {a.type === 'buy' ? t.buy : t.trim}
                 </span>
-                <span className="font-mono font-semibold text-sm text-gray-900">{a.asset}</span>
-                <span className="font-mono font-bold text-sm text-gray-900">{fmtThbRaw(a.amtThb, true)}</span>
-                <span className="text-xs text-gray-500 flex-1">{a.reason}</span>
+                <span className="font-mono font-semibold text-sm text-white">{a.asset}</span>
+                <span className="font-mono font-bold text-sm text-white">{fmtThbRaw(a.amtThb, true)}</span>
+                <span className="text-xs text-faint flex-1">{a.reason}</span>
               </div>
             ))}
           </div>

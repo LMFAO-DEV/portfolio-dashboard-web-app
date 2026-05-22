@@ -173,22 +173,26 @@ export function AskClaude({ open, onClose, prices, fxRate }: AskClaudeProps) {
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose} />
-      <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white z-50 shadow-2xl flex flex-col overflow-hidden">
+      <div className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-surface border-l border-surface-border z-50 shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">{t.askClaude}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-900 text-2xl leading-none">×</button>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border">
+          <h2 className="text-lg font-semibold text-white">{t.askClaude}</h2>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center text-muted hover:text-white rounded-lg hover:bg-surface-raised text-xl transition-colors"
+          >
+            ×
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {/* Desktop: two-column split */}
           <div className="flex h-full">
             {/* Left / form */}
             <div className="flex-1 px-5 py-4 space-y-5 overflow-y-auto">
               {/* Topic chips */}
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{t.selectTopic}</p>
+                <p className="text-xs font-semibold text-faint uppercase tracking-wide mb-2">{t.selectTopic}</p>
                 <div className="flex flex-wrap gap-2">
                   {topics.map((tp) => (
                     <button
@@ -196,8 +200,8 @@ export function AskClaude({ open, onClose, prices, fxRate }: AskClaudeProps) {
                       onClick={() => setTopic(tp.key)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                         topic === tp.key
-                          ? 'bg-gray-900 text-white border-gray-900'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                          ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20'
+                          : 'bg-surface-raised text-muted border-surface-border hover:border-accent/40 hover:text-white'
                       }`}
                     >
                       {tp.label}
@@ -208,7 +212,7 @@ export function AskClaude({ open, onClose, prices, fxRate }: AskClaudeProps) {
 
               {/* Question */}
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-semibold text-faint uppercase tracking-wide mb-1.5">
                   {t.yourQuestion}
                 </label>
                 <textarea
@@ -216,13 +220,13 @@ export function AskClaude({ open, onClose, prices, fxRate }: AskClaudeProps) {
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   placeholder={placeholder}
-                  className="w-full rounded border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-gray-400 text-gray-800 placeholder-gray-400"
+                  className="w-full rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-accent text-white placeholder:text-faint"
                 />
               </div>
 
               {/* Context toggles */}
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{t.contextToggles}</p>
+                <p className="text-xs font-semibold text-faint uppercase tracking-wide mb-2">{t.contextToggles}</p>
                 <div className="space-y-2">
                   {([
                     ['satellite', t.ctxSatellite],
@@ -230,24 +234,24 @@ export function AskClaude({ open, onClose, prices, fxRate }: AskClaudeProps) {
                     ['goal', t.ctxGoal],
                     ['rebalance', t.ctxRebalance],
                   ] as const).map(([key, label]) => (
-                    <label key={key} className="flex items-center gap-2 cursor-pointer">
+                    <label key={key} className="flex items-center gap-2 cursor-pointer group">
                       <input
                         type="checkbox"
                         checked={ctx[key]}
                         onChange={(e) => setCtx({ ...ctx, [key]: e.target.checked })}
-                        className="w-4 h-4 rounded border-gray-300 accent-gray-900"
+                        className="w-4 h-4 rounded border-surface-border accent-accent"
                       />
-                      <span className="text-sm text-gray-700">{label}</span>
+                      <span className="text-sm text-muted group-hover:text-white transition-colors">{label}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
-              {/* Prompt preview (visible on mobile) */}
+              {/* Prompt preview (mobile) */}
               {prompt && (
                 <div className="md:hidden">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{t.promptPreview}</p>
-                  <pre className="text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded p-3 whitespace-pre-wrap font-mono overflow-auto max-h-60">
+                  <p className="text-xs font-semibold text-faint uppercase tracking-wide mb-1">{t.promptPreview}</p>
+                  <pre className="text-xs text-muted bg-surface-raised border border-surface-border rounded-lg p-3 whitespace-pre-wrap font-mono overflow-auto max-h-60">
                     {prompt}
                   </pre>
                 </div>
@@ -256,11 +260,11 @@ export function AskClaude({ open, onClose, prices, fxRate }: AskClaudeProps) {
 
             {/* Right: preview (desktop) */}
             {prompt && (
-              <div className="hidden md:flex flex-col w-64 border-l border-gray-100 bg-gray-50">
-                <p className="px-4 pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <div className="hidden md:flex flex-col w-64 border-l border-surface-border bg-surface-raised/50">
+                <p className="px-4 pt-4 pb-2 text-xs font-semibold text-faint uppercase tracking-wide">
                   {t.promptPreview}
                 </p>
-                <pre className="flex-1 px-4 pb-4 text-xs text-gray-700 whitespace-pre-wrap font-mono overflow-auto">
+                <pre className="flex-1 px-4 pb-4 text-xs text-muted whitespace-pre-wrap font-mono overflow-auto">
                   {prompt}
                 </pre>
               </div>
@@ -269,8 +273,8 @@ export function AskClaude({ open, onClose, prices, fxRate }: AskClaudeProps) {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 px-5 py-3 flex items-center justify-between gap-3">
-          <span className="text-xs text-gray-400 font-mono">
+        <div className="border-t border-surface-border px-5 py-3 flex items-center justify-between gap-3">
+          <span className="text-xs text-faint font-mono">
             {charCount} {t.chars}{skill ? ` · ${skill}` : ''}
           </span>
           <button
@@ -278,10 +282,10 @@ export function AskClaude({ open, onClose, prices, fxRate }: AskClaudeProps) {
             disabled={!topic || !question.trim()}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               copyState === 'copied'
-                ? 'bg-green-600 text-white'
+                ? 'bg-gain text-page'
                 : topic && question.trim()
-                  ? 'bg-gray-900 text-white hover:bg-gray-800'
-                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  ? 'bg-accent text-white hover:bg-accent/90'
+                  : 'bg-surface-raised text-faint cursor-not-allowed border border-surface-border'
             }`}
           >
             {copyState === 'copied' ? t.copySuccess : t.copyPrompt}

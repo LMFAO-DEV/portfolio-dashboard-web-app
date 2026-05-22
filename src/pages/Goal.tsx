@@ -27,10 +27,10 @@ function LabelledSlider({
   onChange: (v: number) => void
 }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-sm text-gray-600">{label}</label>
-        <span className="text-sm font-mono font-bold text-gray-900">{display}</span>
+        <label className="text-sm text-muted">{label}</label>
+        <span className="text-sm font-mono font-bold text-white bg-surface-border px-2 py-0.5 rounded">{display}</span>
       </div>
       <input
         type="range"
@@ -39,9 +39,9 @@ function LabelledSlider({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-1.5 rounded-full accent-gray-900 cursor-pointer"
+        className="w-full"
       />
-      <div className="flex justify-between text-xs text-gray-400 font-mono">
+      <div className="flex justify-between text-xs text-faint font-mono">
         <span>{min >= 1_000_000 ? `฿${(min / 1_000_000).toFixed(0)}M` : min >= 1000 ? `฿${(min / 1000).toFixed(0)}K` : `${min}`}</span>
         <span>{max >= 1_000_000 ? `฿${(max / 1_000_000).toFixed(0)}M` : max >= 1000 ? `฿${(max / 1000).toFixed(0)}K` : `${max}`}</span>
       </div>
@@ -70,7 +70,6 @@ export function Goal({ prices, fxRate }: GoalProps) {
   const satelliteCashThb = usePortfolioStore((s) => s.satelliteCashThb)
   const dca = usePortfolioStore((s) => s.dca)
 
-  // Auto-fill current value from portfolio
   const liveTotal = useMemo(() => {
     const sat = satellite.reduce((s, h) => {
       if (!h.shares) return s
@@ -114,78 +113,79 @@ export function Goal({ prices, fxRate }: GoalProps) {
       <div className="flex flex-col lg:flex-row gap-6">
 
         {/* Left: Sliders */}
-        <div className="lg:w-80 shrink-0 space-y-5">
-          <h1 className="font-bold text-lg text-gray-900">{t.goalCalc}</h1>
-
-          <LabelledSlider
-            label={t.targetAmount}
-            value={target}
-            min={1_000_000}
-            max={50_000_000}
-            step={100_000}
-            display={fmtThbSlider(target)}
-            onChange={setTarget}
-          />
-          <LabelledSlider
-            label={t.currentValue}
-            value={current}
-            min={0}
-            max={50_000_000}
-            step={10_000}
-            display={fmtThbSlider(current)}
-            onChange={setCurrent}
-          />
-          <LabelledSlider
-            label={t.monthlyDca}
-            value={monthly}
-            min={1_000}
-            max={200_000}
-            step={1_000}
-            display={fmtThbSlider(monthly)}
-            onChange={setMonthly}
-          />
-          <LabelledSlider
-            label={t.annualReturn}
-            value={rate}
-            min={5}
-            max={25}
-            step={0.5}
-            display={`${rate}%`}
-            onChange={setRate}
-          />
-          <LabelledSlider
-            label={t.timeHorizon}
-            value={years}
-            min={1}
-            max={30}
-            step={1}
-            display={`${years} yr`}
-            onChange={setYears}
-          />
+        <div className="lg:w-80 shrink-0">
+          <h1 className="font-bold text-lg text-white mb-5">{t.goalCalc}</h1>
+          <div className="bg-surface border border-surface-border rounded-xl p-5 space-y-5">
+            <LabelledSlider
+              label={t.targetAmount}
+              value={target}
+              min={1_000_000}
+              max={50_000_000}
+              step={100_000}
+              display={fmtThbSlider(target)}
+              onChange={setTarget}
+            />
+            <LabelledSlider
+              label={t.currentValue}
+              value={current}
+              min={0}
+              max={50_000_000}
+              step={10_000}
+              display={fmtThbSlider(current)}
+              onChange={setCurrent}
+            />
+            <LabelledSlider
+              label={t.monthlyDca}
+              value={monthly}
+              min={1_000}
+              max={200_000}
+              step={1_000}
+              display={fmtThbSlider(monthly)}
+              onChange={setMonthly}
+            />
+            <LabelledSlider
+              label={t.annualReturn}
+              value={rate}
+              min={5}
+              max={25}
+              step={0.5}
+              display={`${rate}%`}
+              onChange={setRate}
+            />
+            <LabelledSlider
+              label={t.timeHorizon}
+              value={years}
+              min={1}
+              max={30}
+              step={1}
+              display={`${years} yr`}
+              onChange={setYears}
+            />
+          </div>
         </div>
 
         {/* Right: Results */}
         <div className="flex-1 space-y-4">
 
           {/* Result card */}
-          <div className={`rounded-xl p-5 ${meetsTarget ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-            <p className="text-xs font-medium text-gray-500 mb-1">{t.projectedValue}</p>
-            <p className={`text-3xl font-bold font-mono ${meetsTarget ? 'text-green-800' : 'text-red-700'}`}>
+          <div className={`rounded-xl p-5 border ${meetsTarget ? 'bg-gain/5 border-gain/20' : 'bg-loss/5 border-loss/20'}`}>
+            <p className="text-xs font-medium text-muted uppercase tracking-wide mb-2">{t.projectedValue}</p>
+            <p className={`text-3xl font-bold font-mono ${meetsTarget ? 'text-gain' : 'text-loss'}`}>
               {fmtThbRaw(projected, true)}
             </p>
-            <div className="mt-3 h-2.5 bg-white/60 rounded-full overflow-hidden">
+            <div className="mt-4 h-2 bg-surface-border rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all ${meetsTarget ? 'bg-green-500' : 'bg-red-400'}`}
+                className={`h-full rounded-full transition-all ${meetsTarget ? 'bg-gain' : 'bg-loss'}`}
                 style={{ width: `${progressPct}%` }}
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1 font-mono">{progressPct.toFixed(0)}% of target</p>
+            <p className="text-xs text-muted mt-1.5 font-mono">{progressPct.toFixed(0)}% of target</p>
             {meetsTarget ? (
-              <p className={`mt-2 text-sm font-medium text-green-700`}>
+              <p className="mt-2 text-sm font-medium text-gain">
                 {t.meetsTarget} · {t.surplus} {fmtThb(projected - target)}
               </p>
             ) : (
-              <div className="mt-2 space-y-0.5 text-sm text-red-700">
+              <div className="mt-2 space-y-0.5 text-sm text-loss">
                 <p>{t.missing} {fmtThbRaw(target - projected, true)} {t.ofTarget} {fmtThbSlider(target)}</p>
                 {extraPmt > 0 && <p className="font-medium">+{fmtThbSlider(Math.ceil(extraPmt))}{t.extraMonthly}</p>}
               </div>
@@ -193,8 +193,8 @@ export function Goal({ prices, fxRate }: GoalProps) {
           </div>
 
           {/* Milestones */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <h3 className="font-semibold text-sm text-gray-900 mb-3">{t.milestones}</h3>
+          <div className="bg-surface border border-surface-border rounded-xl p-4">
+            <h3 className="font-semibold text-sm text-white mb-3">{t.milestones}</h3>
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               {milestoneData.map(({ milestone, year }) => {
                 const reached = year === 0
@@ -202,12 +202,12 @@ export function Goal({ prices, fxRate }: GoalProps) {
                 return (
                   <div
                     key={milestone}
-                    className={`rounded-lg p-2 text-center ${
+                    className={`rounded-lg p-2.5 text-center border ${
                       reached
-                        ? 'bg-green-100 text-green-800'
+                        ? 'bg-gain/10 border-gain/20 text-gain'
                         : withinHorizon
-                          ? 'bg-blue-50 text-blue-800'
-                          : 'bg-gray-50 text-gray-400'
+                          ? 'bg-accent/10 border-accent/20 text-accent'
+                          : 'bg-surface-raised border-surface-border text-faint'
                     }`}
                   >
                     <p className="text-xs font-mono font-bold">
@@ -227,58 +227,48 @@ export function Goal({ prices, fxRate }: GoalProps) {
           </div>
 
           {/* Growth chart */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <h3 className="font-semibold text-sm text-gray-900 mb-3">{t.growthChart}</h3>
+          <div className="bg-surface border border-surface-border rounded-xl p-4">
+            <h3 className="font-semibold text-sm text-white mb-3">{t.growthChart}</h3>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={chartData} margin={{ top: 4, right: 16, bottom: 4, left: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="year" tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={fmtThbYAxis} tick={{ fontSize: 11 }} width={52} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#2b2f45" />
+                <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#808a9d' }} axisLine={{ stroke: '#2b2f45' }} tickLine={false} />
+                <YAxis tickFormatter={fmtThbYAxis} tick={{ fontSize: 11, fill: '#808a9d' }} width={52} axisLine={false} tickLine={false} />
                 <Tooltip
                   formatter={(v) => fmtThbRaw(Number(v), true)}
-                  labelStyle={{ fontSize: 11 }}
-                  contentStyle={{ fontSize: 12 }}
+                  labelStyle={{ fontSize: 11, color: '#808a9d' }}
+                  contentStyle={{ fontSize: 12, backgroundColor: '#1e2130', border: '1px solid #2b2f45', borderRadius: '8px', color: '#fff' }}
                 />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <ReferenceLine y={target} stroke="#ef4444" strokeDasharray="4 4" label={{ value: t.targetLine, position: 'insideTopRight', fontSize: 10, fill: '#ef4444' }} />
-                <Line
-                  type="monotone"
-                  dataKey="projected"
-                  name={t.projected}
-                  stroke="#16a34a"
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="invested"
-                  name={t.invested}
-                  stroke="#9ca3af"
-                  strokeWidth={1.5}
+                <Legend wrapperStyle={{ fontSize: 12, color: '#808a9d' }} />
+                <ReferenceLine
+                  y={target}
+                  stroke="#ea3943"
                   strokeDasharray="4 4"
-                  dot={false}
+                  label={{ value: t.targetLine, position: 'insideTopRight', fontSize: 10, fill: '#ea3943' }}
                 />
+                <Line type="monotone" dataKey="projected" name={t.projected} stroke="#16c784" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="invested" name={t.invested} stroke="#3861fb" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
 
           {/* DCA Reference Table */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <h3 className="font-semibold text-sm text-gray-900 mb-3">{t.dcaTable}</h3>
+          <div className="bg-surface border border-surface-border rounded-xl p-4">
+            <h3 className="font-semibold text-sm text-white mb-3">{t.dcaTable}</h3>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 text-xs text-gray-500">
-                  <th className="text-left pb-1 font-medium">{t.yearsCol}</th>
-                  <th className="text-right pb-1 font-medium">{t.requiredDca}</th>
+                <tr className="border-b border-surface-border text-xs text-faint">
+                  <th className="text-left pb-2 font-medium uppercase tracking-wide">{t.yearsCol}</th>
+                  <th className="text-right pb-2 font-medium uppercase tracking-wide">{t.requiredDca}</th>
                 </tr>
               </thead>
               <tbody>
                 {DCA_YEARS.map((y) => {
                   const pmt = calcRequiredPmt(target, current, rate, y)
                   return (
-                    <tr key={y} className="border-b border-gray-50 last:border-0">
-                      <td className="py-1.5 text-gray-700">{y}</td>
-                      <td className={`py-1.5 text-right font-mono font-medium ${pmt < 0 ? 'text-gray-400' : pmt <= monthly ? 'text-green-700' : 'text-gray-900'}`}>
+                    <tr key={y} className="border-b border-surface-border/50 last:border-0 hover:bg-surface-raised/50 transition-colors">
+                      <td className="py-2.5 text-muted">{y} yr</td>
+                      <td className={`py-2.5 text-right font-mono font-medium ${pmt < 0 ? 'text-faint' : pmt <= monthly ? 'text-gain' : 'text-white'}`}>
                         {pmt < 0 ? '—' : fmtThbSlider(Math.ceil(pmt))}
                       </td>
                     </tr>

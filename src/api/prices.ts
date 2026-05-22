@@ -11,8 +11,11 @@ export interface PriceFetchResult {
   fetchedAt: string
 }
 
-export async function fetchPrices(): Promise<PriceFetchResult> {
-  const resp = await axios.get<PricesApiResponse>('/api/prices', { timeout: 12000 })
+export async function fetchPrices(tickers: string[]): Promise<PriceFetchResult> {
+  const symbols = tickers.join(',')
+  const resp = await axios.get<PricesApiResponse>(`/api/prices?symbols=${encodeURIComponent(symbols)}`, {
+    timeout: 12000,
+  })
   return {
     prices: resp.data.prices ?? {},
     fxRate: resp.data.fxRate ?? 0,

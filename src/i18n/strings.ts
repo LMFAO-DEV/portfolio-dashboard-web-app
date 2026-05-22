@@ -3,7 +3,7 @@ import type { Lang } from '../types'
 const strings = {
   en: {
     // Nav
-    appName: 'my port.',
+    appName: 'Personal Portfolio',
     appSub: 'core + satellite',
     tabPortfolio: 'Portfolio',
     tabGoal: 'Goal Calc',
@@ -20,7 +20,7 @@ const strings = {
     pnlPct: 'P&L %',
     fxRate: 'USD / THB',
     lastUpdated: 'Last updated',
-    autoEvery15: 'auto every 15 min',
+    autoEvery15: 'end-of-day • refresh manually',
 
     satelliteHoldings: 'Satellite Holdings',
     coreHoldings: 'Core Holdings',
@@ -144,7 +144,7 @@ const strings = {
 
   th: {
     // Nav
-    appName: 'my port.',
+    appName: 'Personal Portfolio',
     appSub: 'core + satellite',
     tabPortfolio: 'พอร์ต',
     tabGoal: 'เป้าหมาย',
@@ -161,7 +161,7 @@ const strings = {
     pnlPct: 'กำไร/ขาดทุน %',
     fxRate: 'USD / THB',
     lastUpdated: 'อัปเดตล่าสุด',
-    autoEvery15: 'อัตโนมัติทุก 15 นาที',
+    autoEvery15: 'ราคาปิด • รีเฟรชเองได้',
 
     satelliteHoldings: 'พอร์ต Satellite',
     coreHoldings: 'พอร์ต Core',

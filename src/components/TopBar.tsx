@@ -34,30 +34,35 @@ export function TopBar({
   ]
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b border-gray-200">
-      <div className="flex items-center justify-between px-4 h-12 gap-3">
+    <header className="sticky top-0 z-30 bg-surface border-b border-surface-border">
+      <div className="flex items-center justify-between px-4 h-14 gap-3 max-w-screen-xl mx-auto">
         {/* Logo */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="w-7 h-7 rounded-lg bg-gray-900 text-white flex items-center justify-center text-sm font-bold">
-            $
+        <div className="flex items-center gap-2.5 shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-accent/30">
+            ₿
           </div>
-          <span className="font-bold text-gray-900 text-sm">my port.</span>
-          <span className="hidden sm:block text-xs text-gray-400">core + satellite</span>
+          <div className="flex flex-col leading-tight">
+            <span className="font-bold text-white text-sm tracking-tight">Personal Portfolio</span>
+            <span className="hidden sm:block text-[10px] text-faint tracking-wide">core + satellite</span>
+          </div>
         </div>
 
-        {/* Center tabs */}
-        <nav className="hidden md:flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+        {/* Center tabs — desktop */}
+        <nav className="hidden md:flex items-center gap-0">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-all ${
+              className={`relative px-4 py-4 text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-white'
+                  : 'text-muted hover:text-white'
               }`}
             >
               {tab.label}
+              {activeTab === tab.id && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-t-sm" />
+              )}
             </button>
           ))}
         </nav>
@@ -67,16 +72,16 @@ export function TopBar({
           {/* Ask Claude */}
           <button
             onClick={onOpenAskClaude}
-            className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100 text-xs font-medium transition-colors"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/15 text-accent hover:bg-accent/25 text-xs font-semibold transition-colors border border-accent/20"
           >
-            {t.btnAskClaude}
+            ✦ {t.btnAskClaude}
           </button>
 
           {/* Copy for Claude */}
           <button
             onClick={onCopyForClaude}
             title={t.btnCopyForClaude}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors text-base"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-raised text-muted hover:text-white transition-colors text-base"
           >
             {copyState === 'copied' ? '✓' : '⧉'}
           </button>
@@ -84,18 +89,18 @@ export function TopBar({
           {/* Lang toggle */}
           <button
             onClick={() => setLang(lang === 'th' ? 'en' : 'th' as Lang)}
-            className="px-2 py-1 rounded-lg border border-gray-200 text-xs font-mono font-medium hover:bg-gray-50 transition-colors"
+            className="px-2.5 py-1.5 rounded-lg border border-surface-border text-xs font-mono font-medium hover:bg-surface-raised transition-colors"
           >
-            <span className={lang === 'th' ? 'text-gray-900 font-bold' : 'text-gray-400'}>TH</span>
-            <span className="text-gray-300 mx-0.5">/</span>
-            <span className={lang === 'en' ? 'text-gray-900 font-bold' : 'text-gray-400'}>EN</span>
+            <span className={lang === 'th' ? 'text-white font-bold' : 'text-faint'}>TH</span>
+            <span className="text-faint mx-0.5">/</span>
+            <span className={lang === 'en' ? 'text-white font-bold' : 'text-faint'}>EN</span>
           </button>
 
           {/* Refresh */}
           <button
             onClick={onRefresh}
             title={t.btnRefresh}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-raised text-muted hover:text-white transition-colors"
           >
             ↻
           </button>
@@ -104,26 +109,29 @@ export function TopBar({
           <button
             onClick={onOpenSettings}
             title={t.btnSettings}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-raised text-muted hover:text-white transition-colors"
           >
             ⚙
           </button>
         </div>
       </div>
 
-      {/* Mobile tab bar (shown below header on small screens) */}
-      <div className="md:hidden flex border-t border-gray-100">
+      {/* Mobile tab bar */}
+      <div className="md:hidden flex border-t border-surface-border">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`flex-1 py-2 text-xs font-medium transition-colors ${
+            className={`relative flex-1 py-2.5 text-xs font-medium transition-colors ${
               activeTab === tab.id
-                ? 'text-gray-900 border-b-2 border-gray-900'
-                : 'text-gray-500 hover:text-gray-900'
+                ? 'text-white'
+                : 'text-muted hover:text-white'
             }`}
           >
             {tab.label}
+            {activeTab === tab.id && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-t-sm" />
+            )}
           </button>
         ))}
       </div>

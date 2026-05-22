@@ -8,6 +8,8 @@ interface SettingsProps {
   onClose: () => void
 }
 
+const inputCls = 'w-36 rounded-lg border border-surface-border bg-surface-raised px-3 py-1.5 text-sm font-mono text-white focus:outline-none focus:ring-1 focus:ring-accent placeholder:text-faint'
+
 function HoldingRow({
   holding,
   onUpdate,
@@ -36,8 +38,8 @@ function HoldingRow({
   }
 
   return (
-    <tr className="border-b border-gray-100 last:border-0">
-      <td className="py-2 pr-3 font-mono font-semibold text-sm text-gray-900">{holding.ticker}</td>
+    <tr className="border-b border-surface-border/50 last:border-0">
+      <td className="py-2 pr-3 font-mono font-semibold text-sm text-white">{holding.ticker}</td>
       <td className="py-2 pr-2">
         <input
           type="number"
@@ -48,7 +50,7 @@ function HoldingRow({
             setShares(e.target.value)
             scheduleUpdate(e.target.value, cost)
           }}
-          className="w-28 rounded border border-gray-200 px-2 py-1 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-gray-400"
+          className={inputCls}
         />
       </td>
       <td className="py-2 pr-2">
@@ -61,14 +63,14 @@ function HoldingRow({
             setCost(e.target.value)
             scheduleUpdate(shares, e.target.value)
           }}
-          className="w-28 rounded border border-gray-200 px-2 py-1 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-gray-400"
+          className={inputCls}
           placeholder={costLabel}
         />
       </td>
       <td className="py-2">
         <button
           onClick={() => onRemove(holding.ticker)}
-          className="text-gray-400 hover:text-red-500 transition-colors text-lg leading-none"
+          className="text-faint hover:text-loss transition-colors text-lg leading-none w-7 h-7 flex items-center justify-center rounded hover:bg-loss/10"
           title="Remove"
         >
           ×
@@ -77,6 +79,9 @@ function HoldingRow({
     </tr>
   )
 }
+
+const sectionHeadCls = 'font-semibold text-xs text-faint uppercase tracking-widest mb-3'
+const thCls = 'text-left pb-2 text-xs text-faint font-medium'
 
 export function Settings({ open, onClose }: SettingsProps) {
   const lang = usePortfolioStore((s) => s.lang)
@@ -107,7 +112,6 @@ export function Settings({ open, onClose }: SettingsProps) {
   const [newSatTicker, setNewSatTicker] = useState('')
   const [newCoreTicker, setNewCoreTicker] = useState('')
 
-  // Sync local inputs when store changes from outside
   useEffect(() => { setNavInput(String(mtsGoldNav.value)) }, [mtsGoldNav.value])
   useEffect(() => { setCashInput(String(satelliteCashThb)) }, [satelliteCashThb])
 
@@ -118,13 +122,7 @@ export function Settings({ open, onClose }: SettingsProps) {
   }, [mtsGoldNav.updatedAt])
 
   function handleExport() {
-    const state = {
-      satellite,
-      core,
-      mtsGoldNav,
-      satelliteCashThb,
-      dca,
-    }
+    const state = { satellite, core, mtsGoldNav, satelliteCashThb, dca }
     const json = JSON.stringify(state, null, 2)
     const blob = new Blob([json], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -162,19 +160,16 @@ export function Settings({ open, onClose }: SettingsProps) {
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/30 z-40"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Slide-over */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white z-50 shadow-2xl flex flex-col overflow-hidden">
+      <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-surface border-l border-surface-border z-50 shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">{t.settings}</h2>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border">
+          <h2 className="text-lg font-semibold text-white">{t.settings}</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-900 text-2xl leading-none"
+            className="w-8 h-8 flex items-center justify-center text-muted hover:text-white rounded-lg hover:bg-surface-raised text-xl transition-colors"
           >
             ×
           </button>
@@ -184,17 +179,15 @@ export function Settings({ open, onClose }: SettingsProps) {
 
           {/* Satellite Holdings */}
           <section>
-            <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wide mb-3">
-              {t.satelliteHoldingsEdit}
-            </h3>
+            <h3 className={sectionHeadCls}>{t.satelliteHoldingsEdit}</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-xs text-gray-500 border-b border-gray-100">
-                    <th className="text-left pb-1 font-medium">Ticker</th>
-                    <th className="text-left pb-1 font-medium">{t.sharesLabel}</th>
-                    <th className="text-left pb-1 font-medium">{t.costPerShare}</th>
-                    <th className="pb-1" />
+                  <tr className="text-xs text-faint border-b border-surface-border">
+                    <th className={thCls}>Ticker</th>
+                    <th className={thCls}>{t.sharesLabel}</th>
+                    <th className={thCls}>{t.costPerShare}</th>
+                    <th className="pb-2" />
                   </tr>
                 </thead>
                 <tbody>
@@ -211,17 +204,17 @@ export function Settings({ open, onClose }: SettingsProps) {
                 </tbody>
               </table>
             </div>
-            <div className="mt-2 flex gap-2">
+            <div className="mt-3 flex gap-2">
               <input
                 value={newSatTicker}
                 onChange={(e) => setNewSatTicker(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === 'Enter' && addSatHolding()}
                 placeholder="TICKER"
-                className="rounded border border-gray-200 px-2 py-1 text-sm font-mono w-28 focus:outline-none focus:ring-1 focus:ring-gray-400"
+                className="rounded-lg border border-surface-border bg-surface-raised px-3 py-1.5 text-sm font-mono text-white w-28 focus:outline-none focus:ring-1 focus:ring-accent placeholder:text-faint"
               />
               <button
                 onClick={addSatHolding}
-                className="text-sm text-gray-600 hover:text-gray-900 border border-gray-200 rounded px-3 py-1"
+                className="text-sm text-muted hover:text-white border border-surface-border rounded-lg px-3 py-1.5 hover:bg-surface-raised transition-colors"
               >
                 {t.addTicker}
               </button>
@@ -230,17 +223,15 @@ export function Settings({ open, onClose }: SettingsProps) {
 
           {/* Core Holdings */}
           <section>
-            <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wide mb-3">
-              {t.coreHoldingsEdit}
-            </h3>
+            <h3 className={sectionHeadCls}>{t.coreHoldingsEdit}</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-xs text-gray-500 border-b border-gray-100">
-                    <th className="text-left pb-1 font-medium">Ticker</th>
-                    <th className="text-left pb-1 font-medium">{t.sharesLabel}</th>
-                    <th className="text-left pb-1 font-medium">{t.costPerShare}</th>
-                    <th className="pb-1" />
+                  <tr className="text-xs text-faint border-b border-surface-border">
+                    <th className={thCls}>Ticker</th>
+                    <th className={thCls}>{t.sharesLabel}</th>
+                    <th className={thCls}>{t.costPerShare}</th>
+                    <th className="pb-2" />
                   </tr>
                 </thead>
                 <tbody>
@@ -257,17 +248,17 @@ export function Settings({ open, onClose }: SettingsProps) {
                 </tbody>
               </table>
             </div>
-            <div className="mt-2 flex gap-2">
+            <div className="mt-3 flex gap-2">
               <input
                 value={newCoreTicker}
                 onChange={(e) => setNewCoreTicker(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === 'Enter' && addCoreHolding_()}
                 placeholder="TICKER"
-                className="rounded border border-gray-200 px-2 py-1 text-sm font-mono w-28 focus:outline-none focus:ring-1 focus:ring-gray-400"
+                className="rounded-lg border border-surface-border bg-surface-raised px-3 py-1.5 text-sm font-mono text-white w-28 focus:outline-none focus:ring-1 focus:ring-accent placeholder:text-faint"
               />
               <button
                 onClick={addCoreHolding_}
-                className="text-sm text-gray-600 hover:text-gray-900 border border-gray-200 rounded px-3 py-1"
+                className="text-sm text-muted hover:text-white border border-surface-border rounded-lg px-3 py-1.5 hover:bg-surface-raised transition-colors"
               >
                 {t.addTicker}
               </button>
@@ -276,9 +267,7 @@ export function Settings({ open, onClose }: SettingsProps) {
 
           {/* Cash Reserve */}
           <section>
-            <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wide mb-3">
-              {t.cashReserveThb}
-            </h3>
+            <h3 className={sectionHeadCls}>{t.cashReserveThb}</h3>
             <input
               type="number"
               min="0"
@@ -289,20 +278,18 @@ export function Settings({ open, onClose }: SettingsProps) {
                 const v = parseFloat(e.target.value)
                 if (isFinite(v)) setSatelliteCashThb(v)
               }}
-              className="w-40 rounded border border-gray-200 px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-gray-400"
+              className={inputCls}
             />
           </section>
 
           {/* MTS-GOLD NAV */}
           <section>
-            <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wide mb-1">
-              {t.mtsGoldNav}
-            </h3>
+            <h3 className={sectionHeadCls}>{t.mtsGoldNav}</h3>
             {goldCore && (
-              <p className="text-xs text-gray-500 mb-2">
+              <p className="text-xs text-faint mb-2">
                 {t.lastNavUpdate}: {mtsGoldNav.updatedAt}
                 {navStale() && (
-                  <span className="ml-2 text-amber-600 font-medium">⚠ {t.navStale}</span>
+                  <span className="ml-2 text-yellow-400 font-medium">⚠ {t.navStale}</span>
                 )}
               </p>
             )}
@@ -316,18 +303,16 @@ export function Settings({ open, onClose }: SettingsProps) {
                 const v = parseFloat(e.target.value)
                 if (isFinite(v)) setMtsGoldNav({ value: v, updatedAt: new Date().toISOString().slice(0, 10) })
               }}
-              className="w-40 rounded border border-gray-200 px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-gray-400"
+              className={inputCls}
             />
           </section>
 
           {/* DCA Settings */}
           <section>
-            <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wide mb-3">
-              {t.dcaSettings}
-            </h3>
-            <div className="space-y-3">
+            <h3 className={sectionHeadCls}>{t.dcaSettings}</h3>
+            <div className="space-y-4">
               <div>
-                <label className="block text-xs text-gray-500 mb-1">{t.coreDca}</label>
+                <label className="block text-xs text-muted mb-1.5">{t.coreDca}</label>
                 <input
                   type="number"
                   min="0"
@@ -338,11 +323,11 @@ export function Settings({ open, onClose }: SettingsProps) {
                     const v = parseFloat(e.target.value)
                     if (isFinite(v)) setDca({ ...dca, coreMonthlyThb: v })
                   }}
-                  className="w-40 rounded border border-gray-200 px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-gray-400"
+                  className={inputCls}
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">{t.satelliteDca}</label>
+                <label className="block text-xs text-muted mb-1.5">{t.satelliteDca}</label>
                 <input
                   type="number"
                   min="0"
@@ -353,17 +338,17 @@ export function Settings({ open, onClose }: SettingsProps) {
                     const v = parseFloat(e.target.value)
                     if (isFinite(v)) setDca({ ...dca, satelliteMonthlyThb: v })
                   }}
-                  className="w-40 rounded border border-gray-200 px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-gray-400"
+                  className={inputCls}
                 />
               </div>
             </div>
           </section>
 
           {/* Export */}
-          <section className="border-t border-gray-100 pt-6">
+          <section className="border-t border-surface-border pt-6">
             <button
               onClick={handleExport}
-              className="w-full py-2 rounded border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              className="w-full py-2.5 rounded-lg border border-surface-border text-sm text-muted hover:text-white hover:bg-surface-raised transition-colors"
             >
               {t.exportSnapshot}
             </button>
@@ -374,23 +359,23 @@ export function Settings({ open, onClose }: SettingsProps) {
             {!showResetConfirm ? (
               <button
                 onClick={() => setShowResetConfirm(true)}
-                className="w-full py-2 rounded border border-red-200 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                className="w-full py-2.5 rounded-lg border border-loss/30 text-sm text-loss hover:bg-loss/10 transition-colors"
               >
                 {t.resetToDefault}
               </button>
             ) : (
-              <div className="p-3 border border-red-200 rounded bg-red-50 space-y-3">
-                <p className="text-sm text-red-700">{t.resetConfirm}</p>
+              <div className="p-4 border border-loss/30 rounded-xl bg-loss/5 space-y-3">
+                <p className="text-sm text-loss">{t.resetConfirm}</p>
                 <div className="flex gap-2">
                   <button
                     onClick={handleReset}
-                    className="flex-1 py-1.5 rounded bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors"
+                    className="flex-1 py-2 rounded-lg bg-loss text-white text-sm font-medium hover:bg-red-700 transition-colors"
                   >
                     {t.resetYes}
                   </button>
                   <button
                     onClick={() => setShowResetConfirm(false)}
-                    className="flex-1 py-1.5 rounded border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="flex-1 py-2 rounded-lg border border-surface-border text-sm text-muted hover:text-white hover:bg-surface-raised transition-colors"
                   >
                     {t.cancel}
                   </button>

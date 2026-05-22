@@ -2,18 +2,27 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchPrices } from '../api/prices'
 import { usePortfolioStore } from '../store/portfolio'
 
-const STALE_MS = 15 * 60 * 1000
+// Cache for 8 hours — end-of-day prices don't change until next session
+const STALE_MS = 8 * 60 * 60 * 1000
 
 export function usePrices() {
   const setPrices = usePortfolioStore((s) => s.setPrices)
   const setFxRate = usePortfolioStore((s) => s.setFxRate)
   const cachedPrices = usePortfolioStore((s) => s.prices)
   const cachedFx = usePortfolioStore((s) => s.fxRate)
+  const satellite = usePortfolioStore((s) => s.satellite)
+  const core = usePortfolioStore((s) => s.core)
+
+  // Collect all non-THB tickers (including zero-share ones for planning)
+  const tickers = [
+    ...satellite.filter((h) => !h.isTHB).map((h) => h.ticker),
+    ...core.filter((h) => !h.isTHB).map((h) => h.ticker),
+  ]
 
   const query = useQuery({
-    queryKey: ['prices'],
+    queryKey: ['prices', tickers.join(',')],
     queryFn: async () => {
-      const result = await fetchPrices()
+      const result = await fetchPrices(tickers)
       const priceMap: typeof cachedPrices = {}
       for (const [sym, usd] of Object.entries(result.prices)) {
         priceMap[sym] = { usd, fetchedAt: result.fetchedAt }
@@ -22,9 +31,9 @@ export function usePrices() {
       setFxRate({ rate: result.fxRate, fetchedAt: result.fetchedAt })
       return result
     },
+    enabled: tickers.length > 0,
     staleTime: STALE_MS,
-    refetchInterval: STALE_MS,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     retry: 2,
     retryDelay: 3000,
   })

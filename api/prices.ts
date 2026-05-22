@@ -1,16 +1,15 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 
-// NBIS and VXUS have 0 shares — excluded to stay within Twelve Data free tier (8 credits/min)
-const STOCK_SYMBOLS = ['MSFT', 'AMZN', 'META', 'ORCL', 'COST', 'CRWV', 'VOO', 'SCHD']
-
-interface TwelveDataPriceEntry {
-  price?: string
-  code?: number
-  message?: string
+interface YahooChartMeta {
+  symbol: string
+  regularMarketPrice?: number
 }
 
-interface ExchangeRateResponse {
-  rates?: Record<string, number>
+interface YahooChartResponse {
+  chart?: {
+    result?: { meta: YahooChartMeta }[]
+    error?: { code: string; description: string }
+  }
 }
 
 function send(res: ServerResponse, status: number, body: unknown): void {
@@ -18,73 +17,59 @@ function send(res: ServerResponse, status: number, body: unknown): void {
     'Content-Type': 'application/json',
     'Cache-Control':
       status === 200
-        ? 'public, s-maxage=60, stale-while-revalidate=900'
+        ? 'public, s-maxage=3600, stale-while-revalidate=28800'
         : 'no-store',
     'Access-Control-Allow-Origin': '*',
   })
   res.end(JSON.stringify(body))
 }
 
-async function fetchFxRate(): Promise<number> {
-  // open.er-api.com — free, no API key, no credit limit
-  const resp = await fetch('https://open.er-api.com/v6/latest/USD', {
-    signal: AbortSignal.timeout(8_000),
-  })
-  if (!resp.ok) return 0
-  const data = (await resp.json()) as ExchangeRateResponse
-  return data.rates?.THB ?? 0
+const YAHOO_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
+    '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  Referer: 'https://finance.yahoo.com/',
+}
+
+async function fetchSymbol(symbol: string): Promise<number | null> {
+  const encoded = encodeURIComponent(symbol)
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encoded}?interval=1d&range=1d`
+  try {
+    const resp = await fetch(url, { signal: AbortSignal.timeout(10_000), headers: YAHOO_HEADERS })
+    if (!resp.ok) return null
+    const data = (await resp.json()) as YahooChartResponse
+    return data.chart?.result?.[0]?.meta?.regularMarketPrice ?? null
+  } catch {
+    return null
+  }
 }
 
 export default async function handler(
-  _req: IncomingMessage,
+  req: IncomingMessage,
   res: ServerResponse,
 ): Promise<void> {
-  const apiKey = process.env.TWELVE_DATA_API_KEY
-  if (!apiKey) {
-    send(res, 500, { error: 'TWELVE_DATA_API_KEY env var is not set' })
+  const url = new URL(req.url ?? '/', 'http://localhost')
+  const symbolsParam = url.searchParams.get('symbols') ?? ''
+
+  if (!symbolsParam) {
+    send(res, 200, { prices: {}, fxRate: 0 })
     return
   }
 
-  // 8 symbols = 8 credits/request, exactly at the free tier per-minute limit
-  const symbolsParam = STOCK_SYMBOLS.join(',')
-  const url = `https://api.twelvedata.com/price?symbol=${symbolsParam}&apikey=${apiKey}`
+  const symbols = symbolsParam.split(',').map((s) => s.trim()).filter(Boolean)
+  const allSymbols = [...symbols, 'USDTHB=X']
 
-  const [stockResp, fxRate] = await Promise.allSettled([
-    fetch(url, { signal: AbortSignal.timeout(10_000) }),
-    fetchFxRate(),
-  ])
-
-  if (stockResp.status === 'rejected') {
-    send(res, 502, { error: `Price fetch failed: ${stockResp.reason}` })
-    return
-  }
-
-  const httpResp = stockResp.value
-  if (!httpResp.ok) {
-    const detail = await httpResp.text().catch(() => '')
-    send(res, 502, { error: `Twelve Data returned HTTP ${httpResp.status}`, detail: detail.slice(0, 200) })
-    return
-  }
-
-  let raw: Record<string, TwelveDataPriceEntry>
-  try {
-    raw = (await httpResp.json()) as Record<string, TwelveDataPriceEntry>
-  } catch {
-    send(res, 502, { error: 'Twelve Data response was not valid JSON' })
-    return
-  }
+  const results = await Promise.all(allSymbols.map((s) => fetchSymbol(s)))
 
   const prices: Record<string, number> = {}
-  for (const sym of STOCK_SYMBOLS) {
-    const entry = raw[sym]
-    if (entry?.price) {
-      const n = parseFloat(entry.price)
-      if (isFinite(n)) prices[sym] = n
-    }
-  }
+  let fxRate = 0
 
-  send(res, 200, {
-    prices,
-    fxRate: fxRate.status === 'fulfilled' ? fxRate.value : 0,
+  allSymbols.forEach((sym, i) => {
+    const price = results[i]
+    if (price == null) return
+    if (sym === 'USDTHB=X') fxRate = price
+    else prices[sym] = price
   })
+
+  send(res, 200, { prices, fxRate })
 }
