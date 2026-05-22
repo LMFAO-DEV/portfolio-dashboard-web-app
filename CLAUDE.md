@@ -16,7 +16,7 @@ Features: real-time prices, P&L tracking, goal calculator, rebalance tracker.
 
 ## Project Structure
 ```
-portfolio-app/
+personal-portfolio-web-app/
 ├── public/
 ├── src/
 │   ├── api/
