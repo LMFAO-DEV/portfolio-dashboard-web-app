@@ -1,58 +1,73 @@
 # Personal Portfolio Dashboard
 
-A personal investment portfolio tracker for THB-based investors. Tracks Core and Satellite portfolios with end-of-day prices, P&L, goal planning, and rebalance guidance.
+A personal investment portfolio tracker for THB-based investors. Tracks Core + Satellite portfolios with end-of-day prices, P&L, goal planning, rebalance guidance, transaction ledger, and smart alerts.
 
 ## Features
 
 ### Portfolio Tab
 
-- Holdings table for Core and Satellite portfolios with real columns: ticker, shares, cost/share, current price, market value (THB), P&L (THB), P&L %, and weight
-- Summary metrics: total value, total P&L, P&L %, and live USD/THB rate
-- Weight distribution bar comparing actual vs target allocation
-- Supports THB-denominated assets (e.g. MTS-GOLD mutual fund) alongside USD stocks
-- Cash reserve tracking for Satellite portfolio
+- Holdings table for Core and Satellite with: ticker, shares, avg cost, price, market value (THB), P&L (THB + %)
+- Summary metrics: total value, total P&L, P&L % — with **FX attribution** (asset return vs FX return) when ledger data exists
+- **Net worth history chart**: daily snapshot stored locally, area chart with % change since start + benchmark overlay
+- **Benchmark toggle**: VOO buy-and-hold vs flat cash comparison on the history chart
+- Weight distribution bar for Satellite holdings
+- **Concentration warning**: banner when any single holding ≥ 25% of total portfolio
+- Supports THB-denominated assets (e.g. MTS-GOLD) alongside USD stocks
+- Cash reserve tracking per portfolio
 
 ### Goal Calculator Tab
 
-- Interactive sliders for target amount, time horizon, annual return %, and monthly DCA
-- Projects future portfolio value using compound interest formula
-- Shows surplus/deficit vs target with required extra monthly DCA to close the gap
-- Milestone tracker: marks which THB milestones (1M, 2M, 5M, 10M, 20M, 50M) are already reached and when projected ones will be hit
-- Growth chart (Recharts): projected value vs capital invested vs target line
-- DCA reference table: required monthly contribution for each time horizon
+- Interactive sliders for target amount, current value, monthly DCA, annual return %, and time horizon
+- **Bear / Base / Bull scenario lines** (±3 pts spread) on the growth chart
+- **Inflation / real-value toggle**: discounts projections to today's THB purchasing power
+- Projects future value using compound interest; shows surplus/deficit and required extra DCA
+- Milestone tracker: marks THB milestones (1M → 50M) as reached or projected year
+- DCA reference table: required monthly contribution across time horizons
 
 ### Rebalance Tab
 
-- Core portfolio allocation vs target (VOO 50%, SCHD 35%, VXUS 10%, Gold 5%)
-- Satellite portfolio breakdown: Core Growth bucket, Small Cap AI bucket, and Cash
-- Core : Satellite split tracker (50/50 target)
-- Action list: BUY / TRIM recommendations with specific THB amounts per position
-- Status badges: On Target / Warning / Overweight / Underweight with ±3% / ±8% thresholds
+- Core/Satellite 50:50 split tracker with visual bar
+- Core bucket allocation vs target; Satellite bucket breakdown (Core Growth / Small Cap AI / Defensive / Cash)
+- Action list: BUY / TRIM with specific THB amounts per position (±3% threshold)
+- **DCA allocator**: routes this month's Core + Satellite DCA budget into the most underweight buckets first — no selling needed
+
+### Ledger Panel (▤ in TopBar)
+
+- **Transaction ledger**: log buy/sell entries per ticker; auto-derives average cost, shares, entry FX rate, and realized P&L back to holdings
+- **Dividend tracker**: log payouts with FX; shows trailing-12-month income, all-time total, and yield on cost per ticker
+- Position summary table: shares, avg cost (USD or THB), realized P&L
+
+### Alert Engine (🔔 in TopBar)
+
+- **Drift alerts**: Core/Satellite split and per-bucket drift beyond a configurable threshold (default 10%)
+- **Gold NAV stale**: warns when MTS-GOLD NAV hasn't been updated in >30 days
+- **Price target alerts**: notifies when a holding is within ±5% of a set target price
+- Dismiss per-alert or clear all dismissed; badge count on TopBar
 
 ### Settings Panel
 
-- Add, edit, and remove holdings for both Core and Satellite portfolios
-- Edit shares and cost-per-share (USD or THB) with 500ms debounce auto-save
-- Undo last removal within the same session
-- MTS-GOLD NAV manual input with staleness warning (>30 days)
-- DCA settings for Core and Satellite monthly contributions
-- Cash reserve input for Satellite
-- Export snapshot as JSON
+- Add, edit, remove holdings for Core and Satellite
+- **Drift threshold slider** (3–20%) for alert sensitivity
+- **Per-holding target price** for price-target alerts
+- Core target allocation % per ticker
+- Satellite target allocation % per bucket
+- DCA settings (Core + Satellite monthly THB)
+- MTS-GOLD NAV manual input
+- Export / Import snapshot as JSON (backup + restore)
 - Reset to empty state
 
-### Ask Claude Panel
+### Ask Claude Panel (✦ in TopBar)
 
-- Pre-built prompt templates: Analyze portfolio, Entry point, Exit/take profit, Rebalance advice, Goal planning, Compare two stocks, Custom
-- Toggle context sections to include (Satellite holdings, Core holdings, Goal settings, Rebalance status)
-- Copy prompt to clipboard — paste into Claude for AI analysis
+- Pre-built prompt templates: Analyze portfolio, Entry point, Exit/take-profit, Rebalance advice, Goal planning, Compare stocks, Screen a stock, Custom
+- Includes portfolio context (holdings, P&L, DCA, rebalance status) in the prompt
+- Copy to clipboard → paste into Claude desktop app for AI analysis
 
 ### Other
 
 - TH / EN language toggle (full bilingual UI)
-- Manual refresh button; prices cached for 8 hours (end-of-day workflow)
-- Copy-for-Claude button: serializes full portfolio state as structured text
+- Manual refresh; prices cached end-of-day (↻ to force refresh)
 - URL hash routing (`#/portfolio`, `#/goal`, `#/rebalance`)
-- Persistent state via `localStorage` (Zustand persist middleware)
+- Persistent state via `localStorage` (Zustand persist)
 
 ## Tech Stack
 
@@ -64,38 +79,45 @@ A personal investment portfolio tracker for THB-based investors. Tracks Core and
 | Server state | TanStack Query v5 |
 | Charts | Recharts v3 |
 | HTTP | Axios |
-| Price source | Yahoo Finance `v8/finance/chart` (unofficial, no API key) |
-| FX rate | open.er-api.com (free, no API key) |
+| Price source | Yahoo Finance `v8/finance/chart` (unofficial, no key) |
+| FX rate | open.er-api.com (free, no key) |
 | Routing | React Router v6 |
 | Deploy | Vercel (serverless function at `api/prices.ts`) |
 
 ## Project Structure
 
 ```text
-portfolio-app/
+personal-portfolio-web-app/
 ├── api/
-│   └── prices.ts          # Vercel serverless function — fetches Yahoo Finance in parallel
+│   └── prices.ts              # Vercel serverless — fetches Yahoo Finance
+├── public/
+│   └── favicon.svg            # Dark-gold chart icon
 ├── src/
-│   ├── api/prices.ts      # Frontend fetch wrapper
+│   ├── api/prices.ts          # Frontend fetch wrapper
 │   ├── components/
-│   │   ├── AskClaude.tsx  # Prompt builder panel
-│   │   ├── Settings.tsx   # Holdings editor drawer
-│   │   ├── TopBar.tsx     # Nav + tab bar
-│   │   └── ui/            # Badge, DualBar, Skeleton
+│   │   ├── AlertBell.tsx      # 🔔 Alert badge + dismiss drawer
+│   │   ├── AskClaude.tsx      # Prompt builder panel
+│   │   ├── Ledger.tsx         # Transaction + dividend ledger
+│   │   ├── NetWorthChart.tsx  # History area chart + benchmark lines
+│   │   ├── Settings.tsx       # Holdings editor + alert config drawer
+│   │   ├── TopBar.tsx         # Nav + tab bar
+│   │   └── ui/                # Badge, DualBar, Skeleton
 │   ├── hooks/
-│   │   └── usePrices.ts   # React Query hook — 8h stale, no polling
-│   ├── i18n/strings.ts    # EN + TH string map
+│   │   └── usePrices.ts       # React Query hook — end-of-day, no polling
+│   ├── i18n/strings.ts        # EN + TH string map
 │   ├── pages/
-│   │   ├── Portfolio.tsx  # Tab 1
-│   │   ├── Goal.tsx       # Tab 2
-│   │   └── Rebalance.tsx  # Tab 3
-│   ├── store/portfolio.ts # Zustand store — all holdings, prices, settings
-│   ├── types/index.ts     # Shared TypeScript interfaces
+│   │   ├── Portfolio.tsx      # Tab 1
+│   │   ├── Goal.tsx           # Tab 2
+│   │   └── Rebalance.tsx      # Tab 3
+│   ├── store/portfolio.ts     # Zustand store — holdings, history, alerts, ledger
+│   ├── types/index.ts         # Shared TypeScript interfaces
 │   └── utils/
-│       ├── calc.ts        # FV, PMT, milestone, growth series
-│       ├── copyForClaude.ts
-│       └── format.ts      # THB/USD/% formatters
-├── vite.config.ts         # Dev proxy plugin (mirrors serverless function)
+│       ├── alerts.ts          # computeAlerts() — drift, stale NAV, price target
+│       ├── calc.ts            # FV, PMT, derivePosition, fxAttribution, scenarios
+│       ├── copyForClaude.ts   # Portfolio → structured text for Claude
+│       └── format.ts          # THB / USD / % formatters
+├── PLAN.md                    # Feature roadmap (Phase 1–4)
+├── vite.config.ts             # Dev proxy for Yahoo Finance CORS bypass
 └── tailwind.config.js
 ```
 
@@ -106,7 +128,7 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-No API keys or environment variables required. Yahoo Finance and open.er-api.com are both free and keyless.
+No API keys or environment variables required.
 
 For production deploy:
 
@@ -117,8 +139,17 @@ vercel --prod
 
 ## Price Fetching
 
-Prices are fetched from Yahoo Finance's `v8/finance/chart` endpoint — one parallel request per ticker. The USD/THB rate comes from `open.er-api.com`. Both are called on first load and cached for 8 hours; use the ↻ button to refresh manually.
+Prices are fetched from Yahoo Finance `v8/finance/chart` — one batch call per load. USD/THB rate from `open.er-api.com`. Both cached end-of-day; use ↻ to refresh manually.
 
-In development (`npm run dev`), a Vite plugin intercepts `/api/prices` and calls Yahoo Finance from the Node.js side, bypassing browser CORS. In production, the same logic runs as a Vercel serverless function at `api/prices.ts`.
+In development, a Vite plugin intercepts `/api/prices` and calls Yahoo Finance server-side (bypasses browser CORS). In production, the same logic runs as a Vercel serverless function.
 
-MTS-GOLD (Thai mutual fund) is not available on Yahoo Finance — enter the NAV manually in Settings.
+MTS-GOLD (Thai mutual fund) is not on Yahoo Finance — enter NAV manually in Settings.
+
+## Transaction Ledger & FX Attribution
+
+When you log buy/sell transactions, the app derives average cost, current shares, and the weighted-average USD/THB rate at entry time (`entryFxRate`). This enables FX attribution on the P&L tile:
+
+- **Asset return** = (current price − avg cost) × shares × entry FX
+- **FX return** = (current FX − entry FX) × shares × current price
+
+Without transactions, holdings fall back to manually entered cost and no FX split is shown.
