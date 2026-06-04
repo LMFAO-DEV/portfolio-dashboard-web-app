@@ -1,5 +1,6 @@
 import { usePortfolioStore } from '../store/portfolio'
 import { useStrings } from '../i18n/strings'
+import { AlertBell } from './AlertBell'
 import type { Lang } from '../types'
 
 type Tab = 'portfolio' | 'goal' | 'rebalance'
@@ -9,6 +10,7 @@ interface TopBarProps {
   onTabChange: (tab: Tab) => void
   onOpenSettings: () => void
   onOpenAskClaude: () => void
+  onOpenLedger: () => void
   onCopyForClaude: () => void
   onRefresh: () => void
   copyState: 'idle' | 'copied'
@@ -19,6 +21,7 @@ export function TopBar({
   onTabChange,
   onOpenSettings,
   onOpenAskClaude,
+  onOpenLedger,
   onCopyForClaude,
   onRefresh,
   copyState,
@@ -34,103 +37,111 @@ export function TopBar({
   ]
 
   return (
-    <header className="sticky top-0 z-30 bg-surface border-b border-surface-border">
-      <div className="flex items-center justify-between px-4 h-14 gap-3 max-w-screen-xl mx-auto">
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-accent/30">
-            ₿
-          </div>
-          <div className="flex flex-col leading-tight">
-            <span className="font-bold text-white text-sm tracking-tight">Personal Portfolio</span>
-            <span className="hidden sm:block text-[10px] text-faint tracking-wide">core + satellite</span>
-          </div>
-        </div>
+    <header className="sticky top-0 z-30 bg-canvas/[0.88] backdrop-blur-md">
+      <div className="border-b border-hairline/70">
+        <div className="flex items-center justify-between px-5 h-14 gap-3 max-w-screen-xl mx-auto">
 
-        {/* Center tabs — desktop */}
-        <nav className="hidden md:flex items-center gap-0">
-          {tabs.map((tab) => (
+          {/* Logo */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-soft to-primary flex items-center justify-center text-xs font-normal text-white shadow-[0_2px_8px_rgba(83,58,253,0.32)]">
+              ₿
+            </div>
+            <div className="flex flex-col leading-none gap-[3px]">
+              <span className="font-light text-ink text-sm tracking-[-0.01em]">Personal Portfolio</span>
+              <span className="hidden sm:block text-[10px] text-ink-mute tracking-[0.06em] uppercase">Core + Satellite</span>
+            </div>
+          </div>
+
+          {/* Center tabs — desktop, spans full header height for underline indicator */}
+          <nav className="hidden md:flex items-center h-full gap-0.5">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id)}
+                className={`relative h-full px-4 text-sm font-light transition-colors ${
+                  activeTab === tab.id
+                    ? 'text-primary'
+                    : 'text-ink-mute hover:text-ink'
+                }`}
+              >
+                {tab.label}
+                {activeTab === tab.id && (
+                  <span className="absolute bottom-[-1px] left-2 right-2 h-[2px] bg-primary rounded-t-[2px]" />
+                )}
+              </button>
+            ))}
+          </nav>
+
+          {/* Right actions */}
+          <div className="flex items-center gap-1 shrink-0">
             <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className={`relative px-4 py-4 text-sm font-medium transition-colors ${
-                activeTab === tab.id
-                  ? 'text-white'
-                  : 'text-muted hover:text-white'
-              }`}
+              onClick={onOpenAskClaude}
+              className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-pill text-[13px] font-normal bg-primary text-white hover:bg-primary-deep active:bg-primary-press transition-colors shadow-[0_2px_8px_rgba(83,58,253,0.28)]"
             >
-              {tab.label}
-              {activeTab === tab.id && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-t-sm" />
-              )}
+              ✦ {t.btnAskClaude}
             </button>
-          ))}
-        </nav>
 
-        {/* Right actions */}
-        <div className="flex items-center gap-1 shrink-0">
-          {/* Ask Claude */}
-          <button
-            onClick={onOpenAskClaude}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/15 text-accent hover:bg-accent/25 text-xs font-semibold transition-colors border border-accent/20"
-          >
-            ✦ {t.btnAskClaude}
-          </button>
+            <button
+              onClick={onCopyForClaude}
+              title={t.btnCopyForClaude}
+              className="w-8 h-8 flex items-center justify-center text-ink-mute hover:text-ink rounded hover:bg-canvas-soft transition-colors text-base"
+            >
+              {copyState === 'copied' ? '✓' : '⧉'}
+            </button>
 
-          {/* Copy for Claude */}
-          <button
-            onClick={onCopyForClaude}
-            title={t.btnCopyForClaude}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-raised text-muted hover:text-white transition-colors text-base"
-          >
-            {copyState === 'copied' ? '✓' : '⧉'}
-          </button>
+            <button
+              onClick={() => setLang(lang === 'th' ? 'en' : 'th' as Lang)}
+              className="px-2.5 py-1.5 rounded text-xs font-normal hover:bg-canvas-soft transition-colors"
+            >
+              <span className={lang === 'th' ? 'text-primary' : 'text-ink-mute'}>TH</span>
+              <span className="text-ink-mute/40 mx-0.5">/</span>
+              <span className={lang === 'en' ? 'text-primary' : 'text-ink-mute'}>EN</span>
+            </button>
 
-          {/* Lang toggle */}
-          <button
-            onClick={() => setLang(lang === 'th' ? 'en' : 'th' as Lang)}
-            className="px-2.5 py-1.5 rounded-lg border border-surface-border text-xs font-mono font-medium hover:bg-surface-raised transition-colors"
-          >
-            <span className={lang === 'th' ? 'text-white font-bold' : 'text-faint'}>TH</span>
-            <span className="text-faint mx-0.5">/</span>
-            <span className={lang === 'en' ? 'text-white font-bold' : 'text-faint'}>EN</span>
-          </button>
+            <AlertBell />
 
-          {/* Refresh */}
-          <button
-            onClick={onRefresh}
-            title={t.btnRefresh}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-raised text-muted hover:text-white transition-colors"
-          >
-            ↻
-          </button>
+            <button
+              onClick={onOpenLedger}
+              title={t.btnLedger}
+              className="w-8 h-8 flex items-center justify-center text-ink-mute hover:text-ink rounded hover:bg-canvas-soft transition-colors"
+            >
+              ▤
+            </button>
 
-          {/* Settings */}
-          <button
-            onClick={onOpenSettings}
-            title={t.btnSettings}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-raised text-muted hover:text-white transition-colors"
-          >
-            ⚙
-          </button>
+            <button
+              onClick={onRefresh}
+              title={t.btnRefresh}
+              className="w-8 h-8 flex items-center justify-center text-ink-mute hover:text-ink rounded hover:bg-canvas-soft transition-colors"
+            >
+              ↻
+            </button>
+
+            <button
+              onClick={onOpenSettings}
+              title={t.btnSettings}
+              className="w-8 h-8 flex items-center justify-center text-ink-mute hover:text-ink rounded hover:bg-canvas-soft transition-colors"
+            >
+              ⚙
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Mobile tab bar */}
-      <div className="md:hidden flex border-t border-surface-border">
+      <div className="md:hidden flex border-t border-hairline/60 bg-canvas/80 backdrop-blur-sm">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`relative flex-1 py-2.5 text-xs font-medium transition-colors ${
+            className={`relative flex-1 py-2.5 text-xs font-light transition-colors ${
               activeTab === tab.id
-                ? 'text-white'
-                : 'text-muted hover:text-white'
+                ? 'text-primary'
+                : 'text-ink-mute hover:text-ink'
             }`}
           >
             {tab.label}
             {activeTab === tab.id && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-t-sm" />
+              <span className="absolute bottom-0 left-1/4 right-1/4 h-[2px] bg-primary rounded-t-[2px]" />
             )}
           </button>
         ))}

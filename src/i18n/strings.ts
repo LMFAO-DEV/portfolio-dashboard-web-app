@@ -45,6 +45,33 @@ const strings = {
     copySuccess: 'Copied!',
     copyFail: "Couldn't copy — try selecting manually",
 
+    // FX attribution
+    pnlBreakdown: 'P&L breakdown',
+    assetReturn: 'Asset',
+    fxReturn: 'FX',
+
+    // Net worth history + benchmark
+    netWorthHistory: 'Net Worth History',
+    netWorthEmpty: 'Tracking starts now — your portfolio value will chart here over the coming days.',
+    sinceStart: 'since start',
+    rangeAll: 'All',
+    benchmarkVoo: 'VOO (if held)',
+    benchmarkCash: 'Cash (held)',
+    benchmarkHint: 'Benchmark requires ≥2 days of history with VOO price.',
+
+    // Concentration
+    concentrationRisk: 'Concentration risk',
+    concentrationDesc: 'is over 25% of the portfolio',
+    concentrationDescMulti: 'are each over 25% of the portfolio',
+
+    // DCA allocator
+    dcaPlan: "This Month's DCA Plan",
+    dcaPlanDesc: 'Routes incoming DCA into the most underweight buckets — no selling needed.',
+    dcaCoreBudget: 'Core budget',
+    dcaSatBudget: 'Satellite budget',
+    dcaAllOnTarget: 'All buckets on or above target — DCA split by target weights.',
+    addLabel: 'ADD',
+
     // Goal Calculator
     goalCalc: 'Goal Calculator',
     targetAmount: 'Target Amount',
@@ -68,6 +95,11 @@ const strings = {
     dcaTable: 'DCA Reference',
     yearsCol: 'Years',
     requiredDca: 'Required Monthly DCA',
+    scenarioBear: 'Bear',
+    scenarioBase: 'Base',
+    scenarioBull: 'Bull',
+    inflationLabel: 'Inflation',
+    realToggle: "Real (today's ฿)",
 
     // Rebalance
     rebalanceTracker: 'Rebalance Tracker',
@@ -83,6 +115,7 @@ const strings = {
     satelliteAlloc: 'Satellite Allocation',
     coreGrowth: 'Core Growth',
     smallCapAI: 'Small Cap AI',
+    defensive: 'Defensive',
     cash: 'Cash',
     actionList: 'Action List',
     buy: 'BUY',
@@ -104,6 +137,14 @@ const strings = {
     coreDca: 'Core Monthly DCA (THB)',
     satelliteDca: 'Satellite Monthly DCA (THB)',
     exportSnapshot: 'Export Snapshot (JSON)',
+    // Settings — alert + API key
+    driftThreshold: 'Drift alert threshold (%)',
+    targetPriceLabel: 'Target price',
+    anthropicKeyLabel: 'Anthropic API key',
+    anthropicKeyHint: 'Stored locally in your browser only — never sent anywhere except Anthropic.',
+    importSnapshot: 'Import Snapshot (JSON)',
+    importError: "Couldn't read that file — make sure it's an exported snapshot.",
+    importSuccess: 'Imported!',
     resetToDefault: 'Reset to Default',
     resetConfirm: 'Are you sure? This will restore the original ticker list and zero out your edits.',
     resetYes: 'Yes, reset',
@@ -134,12 +175,42 @@ const strings = {
     promptPreview: 'Prompt Preview',
 
     placeholderAnalyze: 'What aspect to analyze? e.g. concentration risk, sector exposure…',
-    placeholderEntry: 'Which stock? e.g. AMZN — should I add now or wait?',
-    placeholderExit: 'Which position? e.g. CRWV up 35% — take profit now?',
+    placeholderEntry: 'Which stock + context? e.g. AMZN — should I add now or wait for a pullback to 50 SMA?',
+    placeholderExit: 'Which position + situation? e.g. CRWV up 35% — take profit now or trail?',
     placeholderRebalance: 'Anything specific? e.g. should I rebalance now or wait for Q3?',
-    placeholderGoal: "What's the question? e.g. realistic to hit ฿15M in 15 years?",
-    placeholderCompare: 'Two tickers + question, e.g. MSFT vs ORCL for AI exposure?',
+    placeholderGoal: "What's the question? e.g. realistic to hit ฿15M in 15 years at 10% CAGR?",
+    placeholderCompare: 'Two tickers + question, e.g. MSFT vs ORCL — which gives better AI exposure?',
+    placeholderScreen: 'Ticker + context, e.g. PLTR — good fit for my satellite small cap AI bucket?',
     placeholderCustom: 'Ask anything…',
+    topicScreen: 'Screen a stock',
+
+    // Ledger (transactions + dividends)
+    ledger: 'Ledger',
+    btnLedger: 'Ledger',
+    tabTransactions: 'Transactions',
+    tabDividends: 'Dividends',
+    ledgerHint: 'Transactions auto-update holdings — shares and average cost are derived from here.',
+    txAdd: 'Add transaction',
+    divAdd: 'Add dividend',
+    typeBuy: 'Buy',
+    typeSell: 'Sell',
+    fieldDate: 'Date',
+    fieldTicker: 'Ticker',
+    fieldShares: 'Shares',
+    fieldPrice: 'Price',
+    fieldFx: 'FX',
+    fieldFee: 'Fee ฿',
+    fieldAmount: 'Amount',
+    realizedPnl: 'Realized P&L',
+    avgCost: 'Avg cost',
+    totalInvested: 'Invested',
+    yieldOnCost: 'Yield on cost',
+    totalIncome: 'Total income',
+    income12mo: '12-mo income',
+    noTx: 'No transactions yet — add one to start tracking cost basis.',
+    noDiv: 'No dividends logged yet.',
+    addBtn: 'Add',
+    thbAsset: 'THB asset',
   },
 
   th: {
@@ -186,6 +257,33 @@ const strings = {
     copySuccess: 'คัดลอกแล้ว!',
     copyFail: 'คัดลอกไม่ได้ — ลองเลือกข้อความเอง',
 
+    // FX attribution
+    pnlBreakdown: 'แยกที่มากำไร/ขาดทุน',
+    assetReturn: 'ราคาหุ้น',
+    fxReturn: 'อัตราแลกเปลี่ยน',
+
+    // Net worth history + benchmark
+    netWorthHistory: 'ประวัติมูลค่าพอร์ต',
+    netWorthEmpty: 'เริ่มเก็บข้อมูลแล้ว — มูลค่าพอร์ตจะแสดงเป็นกราฟในวันถัดๆ ไป',
+    sinceStart: 'ตั้งแต่เริ่ม',
+    rangeAll: 'ทั้งหมด',
+    benchmarkVoo: 'VOO (ถ้าถือ)',
+    benchmarkCash: 'เงินสด (ถ้าถือ)',
+    benchmarkHint: 'Benchmark ต้องมีข้อมูลอย่างน้อย 2 วัน พร้อมราคา VOO',
+
+    // Concentration
+    concentrationRisk: 'ความเสี่ยงกระจุกตัว',
+    concentrationDesc: 'เกิน 25% ของพอร์ต',
+    concentrationDescMulti: 'แต่ละตัวเกิน 25% ของพอร์ต',
+
+    // DCA allocator
+    dcaPlan: 'แผน DCA เดือนนี้',
+    dcaPlanDesc: 'จัดเงิน DCA เข้า bucket ที่ขาดมากสุดก่อน — ไม่ต้องขาย',
+    dcaCoreBudget: 'งบ Core',
+    dcaSatBudget: 'งบ Satellite',
+    dcaAllOnTarget: 'ทุก bucket ถึงหรือเกินเป้า — แบ่ง DCA ตามสัดส่วนเป้าหมาย',
+    addLabel: 'เพิ่ม',
+
     // Goal Calculator
     goalCalc: 'เครื่องคำนวณเป้าหมาย',
     targetAmount: 'เป้าหมาย',
@@ -209,6 +307,11 @@ const strings = {
     dcaTable: 'ตาราง DCA อ้างอิง',
     yearsCol: 'ปี',
     requiredDca: 'DCA รายเดือนที่ต้องการ',
+    scenarioBear: 'แย่',
+    scenarioBase: 'ฐาน',
+    scenarioBull: 'ดี',
+    inflationLabel: 'เงินเฟ้อ',
+    realToggle: 'มูลค่าจริง (฿ วันนี้)',
 
     // Rebalance
     rebalanceTracker: 'ติดตามการปรับสมดุล',
@@ -224,6 +327,7 @@ const strings = {
     satelliteAlloc: 'สัดส่วน Satellite',
     coreGrowth: 'Core Growth',
     smallCapAI: 'Small Cap AI',
+    defensive: 'Defensive',
     cash: 'เงินสด',
     actionList: 'รายการดำเนินการ',
     buy: 'ซื้อ',
@@ -245,6 +349,14 @@ const strings = {
     coreDca: 'DCA รายเดือน Core (THB)',
     satelliteDca: 'DCA รายเดือน Satellite (THB)',
     exportSnapshot: 'ส่งออก Snapshot (JSON)',
+    // Settings — alert + API key
+    driftThreshold: 'เกณฑ์แจ้งเตือน drift (%)',
+    targetPriceLabel: 'ราคาเป้าหมาย',
+    anthropicKeyLabel: 'Anthropic API key',
+    anthropicKeyHint: 'เก็บใน browser เท่านั้น — ไม่ส่งไปไหนนอกจาก Anthropic',
+    importSnapshot: 'นำเข้า Snapshot (JSON)',
+    importError: 'อ่านไฟล์ไม่ได้ — ตรวจว่าเป็นไฟล์ snapshot ที่ส่งออกไว้',
+    importSuccess: 'นำเข้าแล้ว!',
     resetToDefault: 'รีเซ็ตเป็นค่าเริ่มต้น',
     resetConfirm: 'แน่ใจหรือไม่? การรีเซ็ตจะกู้คืนรายการหุ้นเดิมและล้างข้อมูลที่แก้ไขทั้งหมด',
     resetYes: 'ใช่ รีเซ็ต',
@@ -275,12 +387,42 @@ const strings = {
     promptPreview: 'ตัวอย่าง Prompt',
 
     placeholderAnalyze: 'ต้องการวิเคราะห์อะไร? เช่น ความเสี่ยงจากการกระจุกตัว, สัดส่วนกลุ่มอุตสาหกรรม…',
-    placeholderEntry: 'หุ้นไหน? เช่น AMZN — ควรซื้อตอนนี้หรือรอ?',
-    placeholderExit: 'ตำแหน่งไหน? เช่น CRWV ขึ้น 35% — ขายทำกำไรตอนนี้?',
+    placeholderEntry: 'หุ้นไหน + บริบท? เช่น AMZN — ควรซื้อตอนนี้หรือรอ pullback ที่ 50 SMA?',
+    placeholderExit: 'ตำแหน่งไหน + สถานการณ์? เช่น CRWV ขึ้น 35% — ขายทำกำไรหรือ trail?',
     placeholderRebalance: 'มีอะไรเฉพาะเจาะจงไหม? เช่น ควรปรับสมดุลตอนนี้หรือรอ Q3?',
-    placeholderGoal: 'คำถามคืออะไร? เช่น ถึง ฿15M ใน 15 ปีเป็นไปได้ไหม?',
-    placeholderCompare: 'สองหุ้นและคำถาม เช่น MSFT vs ORCL สำหรับ AI exposure?',
+    placeholderGoal: 'คำถามคืออะไร? เช่น ถึง ฿15M ใน 15 ปีที่ 10% CAGR เป็นไปได้ไหม?',
+    placeholderCompare: 'สองหุ้นและคำถาม เช่น MSFT vs ORCL — อันไหนให้ AI exposure ดีกว่า?',
+    placeholderScreen: 'Ticker + บริบท เช่น PLTR — เหมาะกับ small cap AI bucket ไหม?',
     placeholderCustom: 'ถามอะไรก็ได้…',
+    topicScreen: 'คัดกรองหุ้น',
+
+    // Ledger (transactions + dividends)
+    ledger: 'บัญชีรายการ',
+    btnLedger: 'รายการ',
+    tabTransactions: 'รายการซื้อขาย',
+    tabDividends: 'เงินปันผล',
+    ledgerHint: 'รายการซื้อขายอัปเดต holding อัตโนมัติ — จำนวนหน่วยและทุนเฉลี่ยคำนวณจากที่นี่',
+    txAdd: 'เพิ่มรายการ',
+    divAdd: 'เพิ่มปันผล',
+    typeBuy: 'ซื้อ',
+    typeSell: 'ขาย',
+    fieldDate: 'วันที่',
+    fieldTicker: 'หุ้น',
+    fieldShares: 'หน่วย',
+    fieldPrice: 'ราคา',
+    fieldFx: 'FX',
+    fieldFee: 'ค่าธรรมเนียม ฿',
+    fieldAmount: 'จำนวนเงิน',
+    realizedPnl: 'กำไรที่รับรู้',
+    avgCost: 'ทุนเฉลี่ย',
+    totalInvested: 'เงินลงทุน',
+    yieldOnCost: 'ผลตอบแทนปันผล',
+    totalIncome: 'ปันผลรวม',
+    income12mo: 'ปันผล 12 เดือน',
+    noTx: 'ยังไม่มีรายการ — เพิ่มเพื่อเริ่มติดตามต้นทุน',
+    noDiv: 'ยังไม่มีปันผล',
+    addBtn: 'เพิ่ม',
+    thbAsset: 'สินทรัพย์ THB',
   },
 } as const
 
