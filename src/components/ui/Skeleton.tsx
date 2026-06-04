@@ -7,7 +7,8 @@ interface SkeletonProps {
 export function Skeleton({ className = '', width = 'w-20', height = 'h-4' }: SkeletonProps) {
   return (
     <span
-      className={`inline-block animate-pulse rounded bg-surface-border ${width} ${height} ${className}`}
+      className={`inline-block animate-pulse rounded-xs ${width} ${height} ${className}`}
+      style={{ background: 'linear-gradient(90deg, #e3e8ee 25%, #f6f9fc 50%, #e3e8ee 75%)' }}
     />
   )
 }

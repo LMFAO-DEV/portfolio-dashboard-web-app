@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,10 +16,14 @@
   }
 
   body {
-    font-family: system-ui, -apple-system, sans-serif;
-    background-color: #0f1117;
-    color: #e2e8f0;
+    font-family: "sohne-var", "Inter", "SF Pro Display", system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 1.4;
+    background-color: #f6f9fc;
+    color: #0d253d;
     -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01";
   }
 
   #root {
@@ -26,30 +32,40 @@
     min-height: 100vh;
   }
 
-  /* Custom scrollbar */
+  .tabular {
+    font-feature-settings: "tnum";
+    letter-spacing: -0.03em;
+  }
+
+  :focus-visible {
+    outline: 2px solid #533afd;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #171923;
+    background: #f6f9fc;
   }
   ::-webkit-scrollbar-thumb {
-    background: #2b2f45;
-    border-radius: 3px;
+    background: #e3e8ee;
+    border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #3d4263;
+    background: #a8c3de;
   }
 
-  /* Range input styling for Goal sliders */
   input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
     height: 4px;
     border-radius: 2px;
-    background: #2b2f45;
+    background: #e3e8ee;
     cursor: pointer;
+    outline: none;
   }
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -57,17 +73,37 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: #3861fb;
+    background: #533afd;
     cursor: pointer;
-    border: 2px solid #0f1117;
-    box-shadow: 0 0 0 1px #3861fb;
+    box-shadow: 0 1px 4px rgba(83, 58, 253, 0.4), 0 0 0 3px rgba(83, 58, 253, 0.1);
+    border: none;
+    transition: box-shadow 0.15s;
+  }
+  input[type="range"]:hover::-webkit-slider-thumb {
+    box-shadow: 0 2px 8px rgba(83, 58, 253, 0.45), 0 0 0 4px rgba(83, 58, 253, 0.15);
   }
   input[type="range"]::-moz-range-thumb {
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: #3861fb;
+    background: #533afd;
     cursor: pointer;
-    border: 2px solid #0f1117;
+    border: none;
+    box-shadow: 0 1px 4px rgba(83, 58, 253, 0.4);
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    opacity: 0.4;
+  }
+}
+
+@layer utilities {
+  .mesh-bg {
+    background-image:
+      radial-gradient(ellipse 130% 100% at -10% -30%, rgba(245, 233, 212, 0.8) 0%, transparent 55%),
+      radial-gradient(ellipse 90% 80% at 38% -25%, rgba(185, 185, 249, 0.6) 0%, transparent 50%),
+      radial-gradient(ellipse 70% 70% at 78% -15%, rgba(83, 58, 253, 0.2) 0%, transparent 45%),
+      radial-gradient(ellipse 55% 60% at 108% -5%, rgba(234, 34, 97, 0.18) 0%, transparent 40%);
   }
 }

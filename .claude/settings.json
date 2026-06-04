@@ -12,7 +12,19 @@
       "Bash(curl -s 'https://query1.finance.yahoo.com/v8/finance/chart/USDTHB%3DX?interval=1d&range=1d' -H 'User-Agent: Mozilla/5.0 \\(Macintosh; Intel Mac OS X 10_15_7\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/124.0.0.0 Safari/537.36' -H 'Referer: https://finance.yahoo.com/')",
       "Bash(npm run *)",
       "Bash(echo \"PID: $!\")",
-      "Bash(curl -s \"http://localhost:5173/api/prices?symbols=MSFT,VOO,USDTHB%3DX\")"
+      "Bash(curl -s \"http://localhost:5173/api/prices?symbols=MSFT,VOO,USDTHB%3DX\")",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(chromium-cli --session portfolio)",
+      "Bash(which chromium *)",
+      "Read(//Applications/**)",
+      "Bash(curl -sf http://localhost:5173)",
+      "Bash(npm run dev > /tmp/vite-dev.log 2>&1 & *)",
+      "Bash(ls -R claude-skills 2>/dev/null | head -40; echo \"---DRAFT---\"; cat \"/Users/theerawuth.p/Desktop/investor-skills/portfolio-analysis-draft.md\" 2>/dev/null | head -80)",
+      "Read(//Users/theerawuth.p/Desktop/investor-skills/**)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
     ]
   }
 }
