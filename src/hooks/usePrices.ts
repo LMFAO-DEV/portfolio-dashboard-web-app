@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchPrices } from '../api/prices'
 import { usePortfolioStore } from '../store/portfolio'
@@ -38,15 +39,18 @@ export function usePrices() {
     retryDelay: 3000,
   })
 
-  // Merge live data with cached fallback
-  const prices: Record<string, number> = {}
-  if (query.data) {
-    Object.assign(prices, query.data.prices)
-  } else {
-    for (const [sym, p] of Object.entries(cachedPrices)) {
-      prices[sym] = p.usd
+  // Stable reference — only changes when query.data or cachedPrices actually updates.
+  const prices = useMemo(() => {
+    const result: Record<string, number> = {}
+    if (query.data) {
+      Object.assign(result, query.data.prices)
+    } else {
+      for (const [sym, p] of Object.entries(cachedPrices)) {
+        result[sym] = p.usd
+      }
     }
-  }
+    return result
+  }, [query.data, cachedPrices])
 
   const fxRate = query.data?.fxRate ?? cachedFx.rate
   const lastUpdated = query.data?.fetchedAt ?? cachedFx.fetchedAt

@@ -1,32 +1,42 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import type { Plugin } from 'vite'
 import type { ServerResponse } from 'http'
 
-const YAHOO_HEADERS = {
-  'User-Agent':
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
-    '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  Referer: 'https://finance.yahoo.com/',
-}
+interface FinnhubQuote { c: number }
+interface FrankfurterRates { rates: Record<string, number> }
 
-async function fetchSymbol(symbol: string): Promise<number | null> {
-  const encoded = encodeURIComponent(symbol)
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encoded}?interval=1d&range=1d`
-  try {
-    const resp = await fetch(url, { signal: AbortSignal.timeout(10_000), headers: YAHOO_HEADERS })
-    if (!resp.ok) return null
-    const data = await resp.json() as {
-      chart?: { result?: { meta?: { regularMarketPrice?: number } }[] }
+function buildDevProxy(apiKey: string): Plugin {
+  const BASE = 'https://finnhub.io/api/v1'
+
+  async function fetchQuote(symbol: string): Promise<number | null> {
+    try {
+      const resp = await fetch(
+        `${BASE}/quote?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`,
+        { signal: AbortSignal.timeout(10_000) },
+      )
+      if (!resp.ok) return null
+      const data = (await resp.json()) as FinnhubQuote
+      return data.c > 0 ? data.c : null
+    } catch {
+      return null
     }
-    return data.chart?.result?.[0]?.meta?.regularMarketPrice ?? null
-  } catch {
-    return null
   }
-}
 
-// Dev-only middleware: mirrors api/prices.ts without CORS issues
-function pricesDevProxy(): Plugin {
+  async function fetchUsdThb(): Promise<number | null> {
+    try {
+      const resp = await fetch(
+        'https://api.frankfurter.app/latest?from=USD&to=THB',
+        { signal: AbortSignal.timeout(10_000) },
+      )
+      if (!resp.ok) return null
+      const data = (await resp.json()) as FrankfurterRates
+      return data.rates?.THB ?? null
+    } catch {
+      return null
+    }
+  }
+
   return {
     name: 'prices-dev-proxy',
     configureServer(server) {
@@ -43,26 +53,28 @@ function pricesDevProxy(): Plugin {
         }
 
         const symbols = symbolsParam.split(',').map((s) => s.trim()).filter(Boolean)
-        const allSymbols = [...symbols, 'USDTHB=X']
 
-        const results = await Promise.all(allSymbols.map((s) => fetchSymbol(s)))
+        const [quoteResults, fxRate] = await Promise.all([
+          Promise.all(symbols.map((s) => fetchQuote(s))),
+          fetchUsdThb(),
+        ])
 
         const prices: Record<string, number> = {}
-        let fxRate = 0
-        allSymbols.forEach((sym, i) => {
-          const price = results[i]
-          if (price == null) return
-          if (sym === 'USDTHB=X') fxRate = price
-          else prices[sym] = price
+        symbols.forEach((sym, i) => {
+          const price = quoteResults[i]
+          if (price != null) prices[sym] = price
         })
 
         res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ prices, fxRate }))
+        res.end(JSON.stringify({ prices, fxRate: fxRate ?? 0 }))
       })
     },
   }
 }
 
-export default defineConfig({
-  plugins: [react(), pricesDevProxy()],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  return {
+    plugins: [react(), buildDevProxy(env.FINNHUB_API_KEY ?? '')],
+  }
 })
