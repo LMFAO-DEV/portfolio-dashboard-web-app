@@ -3,6 +3,7 @@ import { TopBar } from './components/TopBar'
 import { Settings } from './components/Settings'
 import { AskClaude } from './components/AskClaude'
 import { Ledger } from './components/Ledger'
+import { CategorySetup } from './components/CategorySetup'
 import { Portfolio } from './pages/Portfolio'
 import { Goal } from './pages/Goal'
 import { Rebalance } from './pages/Rebalance'
@@ -43,6 +44,10 @@ function App() {
   const setAlerts = usePortfolioStore((s) => s.setAlerts)
   const existingAlerts = usePortfolioStore((s) => s.alerts)
   const driftThresholdPct = usePortfolioStore((s) => s.driftThresholdPct)
+  const categoryConfigs = usePortfolioStore((s) => s.categoryConfigs)
+  const positionLimit = usePortfolioStore((s) => s.positionLimit)
+  const categorySetupDone = usePortfolioStore((s) => s.categorySetupDone)
+  const setCategorySetupDone = usePortfolioStore((s) => s.setCategorySetupDone)
 
   const { prices, fxRate, lastUpdated, isLoading, isError, refetch } = usePrices()
 
@@ -52,12 +57,13 @@ function App() {
     const fresh = computeAlerts({
       core, satellite, prices, fxRate, mtsGoldNav, satTargets,
       satelliteCashThb: satelliteCashThb_, coreCashThb, driftThresholdPct,
+      categoryConfigs, positionLimit,
     })
     // Preserve dismissed state for alerts that still exist.
     const dismissedIds = new Set(existingAlerts.filter((a) => a.dismissed).map((a) => a.id))
     setAlerts(fresh.map((a) => ({ ...a, dismissed: dismissedIds.has(a.id) })))
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, prices, fxRate, core, satellite, mtsGoldNav, satTargets, satelliteCashThb_, coreCashThb, driftThresholdPct])
+  }, [isLoading, prices, fxRate, core, satellite, mtsGoldNav, satTargets, satelliteCashThb_, coreCashThb, driftThresholdPct, categoryConfigs, positionLimit])
 
   // Record a daily net-worth snapshot once prices + FX are loaded.
   useEffect(() => {
@@ -89,6 +95,13 @@ function App() {
       setCopyState('copied')
       setTimeout(() => setCopyState('idle'), 2000)
     }
+  }
+
+  // Show category setup gate on first visit (before dashboard)
+  if (!categorySetupDone) {
+    return (
+      <CategorySetup onComplete={() => setCategorySetupDone(true)} />
+    )
   }
 
   return (

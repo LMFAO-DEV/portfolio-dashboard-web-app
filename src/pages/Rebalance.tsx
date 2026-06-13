@@ -51,6 +51,7 @@ function getStatusLabel(gap: number, t: ReturnType<typeof useStrings>) {
 
 interface AllocationRowProps {
   name: string
+  color?: string
   target: number
   actual: number
   valueThb: number
@@ -58,7 +59,7 @@ interface AllocationRowProps {
   t: ReturnType<typeof useStrings>
 }
 
-function AllocationRow({ name, target, actual, totalThb, t }: AllocationRowProps) {
+function AllocationRow({ name, color, target, actual, totalThb, t }: AllocationRowProps) {
   const gap = actual - target
   const tone = getTone(gap)
   const { label, variant } = getStatusLabel(gap, t)
@@ -68,6 +69,7 @@ function AllocationRow({ name, target, actual, totalThb, t }: AllocationRowProps
     <div className="py-3 border-b border-hairline last:border-0">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
+          {color && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />}
           <span className="font-light text-sm text-ink">{name}</span>
           <span className="tabular text-xs text-ink-mute">target {target}%</span>
         </div>
@@ -102,10 +104,11 @@ export function Rebalance({ prices, fxRate }: RebalanceProps) {
   const satelliteCashThb = usePortfolioStore((s) => s.satelliteCashThb)
   const coreCashThb = usePortfolioStore((s) => s.coreCashThb)
   const mtsGoldNav = usePortfolioStore((s) => s.mtsGoldNav)
-  const satTargets = usePortfolioStore((s) => s.satTargets)
   const dca = usePortfolioStore((s) => s.dca)
+  const categoryConfigs = usePortfolioStore((s) => s.categoryConfigs)
+  const setCategorySetupDone = usePortfolioStore((s) => s.setCategorySetupDone)
 
-  const { coreRows, coreTotal, satBuckets, satTotal, total, actions } = useMemo(() => {
+  const { coreRows, coreTotal, satCategoryBuckets, satUnassignedThb, satTotal, total, actions } = useMemo(() => {
     const coreRows = core.map((h) => {
       const valThb = h.isTHB
         ? h.shares * (h.navThb ?? mtsGoldNav.value)
@@ -115,24 +118,27 @@ export function Rebalance({ prices, fxRate }: RebalanceProps) {
     const coreEquityThb = coreRows.reduce((s, r) => s + r.valThb, 0)
     const coreTotal = coreEquityThb + coreCashThb
 
-    const satVal = (group: string) =>
-      satellite
-        .filter((h) => h.satGroup === group)
+    const sorted = [...categoryConfigs].sort((a, b) => a.sort_order - b.sort_order)
+
+    // Satellite category buckets — only assigned positions
+    const satCategoryBuckets = sorted.map((cfg) => {
+      const val = satellite
+        .filter((h) => h.category_id === cfg.id && h.shares > 0)
         .reduce((s, h) => s + h.shares * (prices[h.ticker] ?? 0) * fxRate, 0)
+      return { config: cfg, valThb: val }
+    })
 
-    const coreGrowthThb = satVal('coreGrowth')
-    const smallCapAiThb = satVal('smallCapAI')
-    const defensiveThb = satVal('defensive')
-    const satTotal = coreGrowthThb + smallCapAiThb + defensiveThb + satelliteCashThb
+    // Unassigned positions (category_id is null or undefined)
+    const unassigned = satellite.filter((h) => !h.category_id && h.shares > 0)
+    const satUnassignedThb = unassigned.reduce(
+      (s, h) => s + h.shares * (prices[h.ticker] ?? 0) * fxRate, 0,
+    )
 
-    const satBuckets = [
-      { name: t.coreGrowth, target: satTargets.coreGrowth, valThb: coreGrowthThb },
-      { name: t.smallCapAI, target: satTargets.smallCapAI, valThb: smallCapAiThb },
-      { name: t.defensive, target: satTargets.defensive, valThb: defensiveThb },
-      { name: t.cashReserve, target: satTargets.cash, valThb: satelliteCashThb },
-    ]
+    // Total excludes unassigned (per spec)
+    const satAssignedThb = satCategoryBuckets.reduce((s, b) => s + b.valThb, 0)
+    const satTotal = satAssignedThb + satelliteCashThb
 
-    const total = coreTotal + satTotal
+    const total = coreTotal + satTotal + satUnassignedThb
 
     const actions: { type: 'buy' | 'trim'; asset: string; amtThb: number; reason: string }[] = []
 
@@ -150,24 +156,39 @@ export function Rebalance({ prices, fxRate }: RebalanceProps) {
       }
     }
 
-    for (const b of satBuckets) {
+    for (const b of satCategoryBuckets) {
       const actual = satTotal > 0 ? (b.valThb / satTotal) * 100 : 0
-      const gap = actual - b.target
+      const gap = actual - b.config.target_pct
       if (Math.abs(gap) > 3) {
         const amtThb = Math.abs(gap / 100) * satTotal
         actions.push({
           type: gap < 0 ? 'buy' : 'trim',
-          asset: b.name,
+          asset: b.config.label,
           amtThb,
-          reason: `${b.name} ${gap < 0 ? 'under' : 'over'} target (${actual.toFixed(0)}% vs ${b.target}%)`,
+          reason: `${b.config.label} ${gap < 0 ? 'under' : 'over'} target (${actual.toFixed(0)}% vs ${b.config.target_pct}%)`,
         })
       }
     }
 
+    // Cash reserve deviation
+    const cashActualPct = satTotal > 0 ? (satelliteCashThb / satTotal) * 100 : 0
+    // (Cash reserve target is 100 - sum of category targets, implicitly)
+    const categoryTargetSum = sorted.reduce((s, c) => s + c.target_pct, 0)
+    const cashTarget = Math.max(0, 100 - categoryTargetSum)
+    const cashGap = cashActualPct - cashTarget
+    if (Math.abs(cashGap) > 3 && cashTarget > 0) {
+      actions.push({
+        type: cashGap < 0 ? 'buy' : 'trim',
+        asset: t.cashReserve,
+        amtThb: Math.abs(cashGap / 100) * satTotal,
+        reason: `Cash ${cashGap < 0 ? 'under' : 'over'} target (${cashActualPct.toFixed(0)}% vs ${cashTarget.toFixed(0)}%)`,
+      })
+    }
+
     actions.sort((a, b) => b.amtThb - a.amtThb)
 
-    return { coreRows, coreTotal, satBuckets, satTotal, total, actions }
-  }, [core, satellite, prices, fxRate, mtsGoldNav, satelliteCashThb, coreCashThb, satTargets, t])
+    return { coreRows, coreTotal, satCategoryBuckets, satUnassignedThb, satTotal, total, actions }
+  }, [core, satellite, prices, fxRate, mtsGoldNav, satelliteCashThb, coreCashThb, categoryConfigs, t])
 
   const corePct = total > 0 ? (coreTotal / total) * 100 : 50
   const satPct = 100 - corePct
@@ -183,15 +204,28 @@ export function Rebalance({ prices, fxRate }: RebalanceProps) {
       targetPct: r.targetPct,
     })),
   )
+
+  const categoryTargetSum = categoryConfigs.reduce((s, c) => s + c.target_pct, 0)
+  const cashTarget = Math.max(0, 100 - categoryTargetSum)
+  const cashActualPct = satTotal > 0 ? (satelliteCashThb / satTotal) * 100 : 0
+
   const satDca = allocateDca(
     dca.satelliteMonthlyThb,
-    satBuckets.map((b) => ({
-      name: b.name,
-      actualPct: satTotal > 0 ? (b.valThb / satTotal) * 100 : 0,
-      targetPct: b.target,
-    })),
+    [
+      ...satCategoryBuckets.map((b) => ({
+        name: b.config.label,
+        actualPct: satTotal > 0 ? (b.valThb / satTotal) * 100 : 0,
+        targetPct: b.config.target_pct,
+      })),
+      { name: t.cashReserve, actualPct: cashActualPct, targetPct: cashTarget },
+    ],
   )
   const hasDcaPlan = coreDca.plan.length > 0 || satDca.plan.length > 0
+
+  const noCategorySetup = categoryConfigs.length === 0
+  const unassignedCount = satellite.filter((h) => !h.category_id && h.shares > 0).length
+
+  const sorted = [...categoryConfigs].sort((a, b) => a.sort_order - b.sort_order)
 
   return (
     <div className="p-5 sm:p-6 space-y-5 max-w-screen-xl mx-auto">
@@ -227,6 +261,7 @@ export function Rebalance({ prices, fxRate }: RebalanceProps) {
 
       {/* Core + Satellite panels */}
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-5">
+        {/* Core allocation */}
         <div className="flex-1 bg-canvas rounded-xl border border-hairline shadow-panel p-5">
           <div className="flex items-center justify-between mb-1">
             <h3 className="font-light text-[15px] text-ink tracking-[-0.01em]">{t.coreAlloc}</h3>
@@ -251,6 +286,7 @@ export function Rebalance({ prices, fxRate }: RebalanceProps) {
           })}
         </div>
 
+        {/* Satellite allocation */}
         <div className="flex-1 bg-canvas rounded-xl border border-hairline shadow-panel p-5">
           <div className="flex items-center justify-between mb-1">
             <h3 className="font-light text-[15px] text-ink tracking-[-0.01em]">{t.satelliteAlloc}</h3>
@@ -259,20 +295,60 @@ export function Rebalance({ prices, fxRate }: RebalanceProps) {
             </span>
           </div>
           <p className="tabular text-xs text-ink-mute mb-4">Total: {fmtThbRaw(satTotal, true)}</p>
-          {satBuckets.map((b) => {
-            const actual = satTotal > 0 ? (b.valThb / satTotal) * 100 : 0
-            return (
+
+          {noCategorySetup ? (
+            <div className="py-6 text-center">
+              <p className="text-sm text-ink-mute mb-3">{t.noCategoriesHint}</p>
+              <button
+                onClick={() => setCategorySetupDone(false)}
+                className="px-4 py-2 rounded-pill bg-primary text-white text-sm hover:bg-primary/90 transition-colors"
+              >
+                {t.btnSetupCategories}
+              </button>
+            </div>
+          ) : (
+            <>
+              {sorted.map((cfg) => {
+                const b = satCategoryBuckets.find((x) => x.config.id === cfg.id)!
+                const actual = satTotal > 0 ? (b.valThb / satTotal) * 100 : 0
+                return (
+                  <AllocationRow
+                    key={cfg.id}
+                    name={cfg.label}
+                    color={cfg.colour_hex}
+                    target={cfg.target_pct}
+                    actual={actual}
+                    valueThb={b.valThb}
+                    totalThb={satTotal}
+                    t={t}
+                  />
+                )
+              })}
+
+              {/* Cash reserve row */}
               <AllocationRow
-                key={b.name}
-                name={b.name}
-                target={b.target}
-                actual={actual}
-                valueThb={b.valThb}
+                name={t.cashReserve}
+                target={cashTarget}
+                actual={cashActualPct}
+                valueThb={satelliteCashThb}
                 totalThb={satTotal}
                 t={t}
               />
-            )
-          })}
+
+              {/* Unassigned bucket */}
+              {unassignedCount > 0 && (
+                <div className="mt-3 pt-3 border-t border-hairline">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs px-2 py-0.5 rounded-pill bg-warning/10 text-warning border border-warning/25">
+                      {unassignedCount} {t.unassigned}
+                    </span>
+                    <span className="tabular text-xs text-ink-mute">{fmtThbRaw(satUnassignedThb, true)}</span>
+                  </div>
+                  <p className="text-xs text-ink-mute">{t.unassignedDesc}</p>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 

@@ -211,6 +211,53 @@ const strings = {
     noDiv: 'No dividends logged yet.',
     addBtn: 'Add',
     thbAsset: 'THB asset',
+
+    // Category system
+    categorySetup: 'Set Up Categories',
+    categorySetupDesc: 'Define your investment categories and target allocations. Every position will be assigned to one of these.',
+    categorySetupDone: 'Done — Go to Dashboard',
+    categorySetupSkip: 'Skip for now',
+    categoryName: 'Category name',
+    categoryTarget: 'Target %',
+    categoryColor: 'Color',
+    categoryAdd: 'Add category',
+    categoryEdit: 'Edit',
+    categoryDelete: 'Delete',
+    targetSum: 'Target sum',
+    targetSumOk: 'Targets sum to 100% ✓',
+    targetSumWarn: 'Targets must sum to 100%',
+    unassigned: 'Unassigned',
+    unassignedDesc: 'Excluded from rebalancing — assign a category to include',
+    assignCategory: 'Assign category',
+    whichCategory: 'Which category does {ticker} belong to?',
+    noCategoriesYet: 'No categories set up',
+    noCategoriesHint: 'Set up categories in Settings to enable rebalancing',
+    btnSetupCategories: 'Set Up Categories',
+    colCategory: 'Category',
+    reassign: 'Reassign',
+
+    // Stop-loss
+    stopLoss: 'Stop Loss',
+    stopLossPrice: 'Stop price',
+    stopLossPct: 'Stop %',
+    stopLossNoSet: 'No stop set',
+    distanceToStop: 'above stop',
+    belowStop: 'BELOW STOP',
+    colStopLoss: 'Stop Loss',
+
+    // Catalyst
+    catalyst: 'Catalyst',
+    catalystDate: 'Date',
+    catalystSoon: 'soon',
+    colCatalyst: 'Catalyst',
+    noCatalyst: '—',
+
+    // Position count
+    positionCountBanner: 'You have {n} positions. Your target is {limit}.',
+
+    // Settings — categories
+    categoriesLabel: 'Categories',
+    positionLimitLabel: 'Position limit',
   },
 
   th: {
@@ -423,6 +470,53 @@ const strings = {
     noDiv: 'ยังไม่มีปันผล',
     addBtn: 'เพิ่ม',
     thbAsset: 'สินทรัพย์ THB',
+
+    // Category system
+    categorySetup: 'ตั้งค่าหมวดหมู่',
+    categorySetupDesc: 'กำหนดหมวดหมู่การลงทุนและสัดส่วนเป้าหมาย ทุกตำแหน่งจะถูกกำหนดให้กับหมวดหมู่เหล่านี้',
+    categorySetupDone: 'เสร็จสิ้น — ไปที่ Dashboard',
+    categorySetupSkip: 'ข้ามไปก่อน',
+    categoryName: 'ชื่อหมวดหมู่',
+    categoryTarget: 'เป้าหมาย %',
+    categoryColor: 'สี',
+    categoryAdd: 'เพิ่มหมวดหมู่',
+    categoryEdit: 'แก้ไข',
+    categoryDelete: 'ลบ',
+    targetSum: 'ผลรวมเป้าหมาย',
+    targetSumOk: 'รวมเป้าหมายได้ 100% ✓',
+    targetSumWarn: 'เป้าหมายต้องรวมได้ 100%',
+    unassigned: 'ไม่ได้กำหนด',
+    unassignedDesc: 'ไม่รวมในการปรับสมดุล — กำหนดหมวดหมู่เพื่อรวม',
+    assignCategory: 'กำหนดหมวดหมู่',
+    whichCategory: '{ticker} อยู่ในหมวดหมู่ใด?',
+    noCategoriesYet: 'ยังไม่มีหมวดหมู่',
+    noCategoriesHint: 'ตั้งค่าหมวดหมู่ใน Settings เพื่อเปิดใช้งานการปรับสมดุล',
+    btnSetupCategories: 'ตั้งค่าหมวดหมู่',
+    colCategory: 'หมวดหมู่',
+    reassign: 'เปลี่ยนหมวด',
+
+    // Stop-loss
+    stopLoss: 'Stop Loss',
+    stopLossPrice: 'ราคา stop',
+    stopLossPct: 'Stop %',
+    stopLossNoSet: 'ไม่ได้ตั้ง stop',
+    distanceToStop: 'เหนือ stop',
+    belowStop: 'ต่ำกว่า STOP',
+    colStopLoss: 'Stop Loss',
+
+    // Catalyst
+    catalyst: 'Catalyst',
+    catalystDate: 'วันที่',
+    catalystSoon: 'เร็วๆ นี้',
+    colCatalyst: 'Catalyst',
+    noCatalyst: '—',
+
+    // Position count
+    positionCountBanner: 'มี {n} ตำแหน่ง เป้าหมายคือ {limit}',
+
+    // Settings — categories
+    categoriesLabel: 'หมวดหมู่',
+    positionLimitLabel: 'จำนวนตำแหน่งสูงสุด',
   },
 } as const
 

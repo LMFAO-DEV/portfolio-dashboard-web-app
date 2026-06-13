@@ -3,10 +3,11 @@ import { usePortfolioStore } from '../store/portfolio'
 import { useStrings } from '../i18n/strings'
 import { NetWorthChart } from '../components/NetWorthChart'
 import { Skeleton } from '../components/ui/Skeleton'
+import { CategoryAssignModal } from '../components/CategoryAssignModal'
 import { fmtThb, fmtThbRaw, fmtUsd, fmtPct, fmtPctRaw, fmtTime } from '../utils/format'
 import { fxAttribution } from '../utils/calc'
 import { copyToClipboard, buildCopyForClaude } from '../utils/copyForClaude'
-import type { Holding, SatGroup } from '../types'
+import type { Holding } from '../types'
 
 const SEG_COLORS = [
   '#533afd', '#00A63D', '#FE9900', '#ea2261',
@@ -94,6 +95,8 @@ export function Portfolio({
   const mtsGoldNav = usePortfolioStore((s) => s.mtsGoldNav)
   const satelliteCashThb = usePortfolioStore((s) => s.satelliteCashThb)
   const coreCashThb = usePortfolioStore((s) => s.coreCashThb)
+  const categoryConfigs = usePortfolioStore((s) => s.categoryConfigs)
+  const positionLimit = usePortfolioStore((s) => s.positionLimit)
 
   const updateSatelliteHolding = usePortfolioStore((s) => s.updateSatelliteHolding)
   const addSatelliteHolding = usePortfolioStore((s) => s.addSatelliteHolding)
@@ -105,13 +108,25 @@ export function Portfolio({
   const setCoreCashThb = usePortfolioStore((s) => s.setCoreCashThb)
 
   const [editingKey, setEditingKey] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState({ shares: '', cost: '', nav: '', satGroup: '' })
+  const [editForm, setEditForm] = useState({
+    shares: '', cost: '', nav: '',
+    category_id: null as string | null,
+    stop_loss_pct: '', catalyst: '', catalyst_date: '',
+  })
 
   const [addingTo, setAddingTo] = useState<'sat' | 'core' | null>(null)
-  const [addForm, setAddForm] = useState({ ticker: '', shares: '', cost: '', isTHB: false, satGroup: 'coreGrowth' as SatGroup })
+  const [addForm, setAddForm] = useState({
+    ticker: '', shares: '', cost: '', isTHB: false,
+    category_id: null as string | null,
+  })
 
   const [editingCash, setEditingCash] = useState<'sat' | 'core' | null>(null)
   const [cashInput, setCashInput] = useState('')
+
+  // Assignment modal for new satellite position
+  const [assignModal, setAssignModal] = useState<{ open: boolean; ticker: string } | null>(null)
+  // Reassign modal for existing position
+  const [reassignModal, setReassignModal] = useState<{ open: boolean; ticker: string } | null>(null)
 
   // --- Computed rows ---
   const satRows: ComputedRow[] = satellite.map((h) => {
@@ -152,7 +167,6 @@ export function Portfolio({
   const totalPnlThb = [...satRows, ...coreRows].reduce((s, r) => s + r.pnlThb, 0)
   const totalPnlPct = totalCostUsd && fxRate ? (totalPnlThb / (totalCostUsd * fxRate)) * 100 : 0
 
-  // FX attribution — split USD-asset P&L into asset move vs FX move (needs entry FX from ledger).
   const fxAttr = [...satRows, ...coreRows].reduce(
     (acc, r) => {
       if (r.isTHB || !r.shares || !r.price || !r.costUsd || !r.entryFxRate) return acc
@@ -162,7 +176,6 @@ export function Portfolio({
     { assetThb: 0, fxThb: 0, has: false },
   )
 
-  // Concentration risk — any single holding over 25% of the whole portfolio.
   const concentrated = totalThb > 0
     ? [...satRows, ...coreRows]
         .filter((r) => r.shares > 0)
@@ -186,6 +199,17 @@ export function Portfolio({
     },
   ]
 
+  // Position count for banner
+  const activePositionCount = satellite.filter((h) => h.shares > 0).length
+  const showPositionCountBanner = activePositionCount > positionLimit
+
+  // Unassigned count
+  const unassignedCount = satellite.filter((h) => h.shares > 0 && !h.category_id).length
+
+  // Category lookup helper
+  const catById = (id: string | null | undefined) =>
+    categoryConfigs.find((c) => c.id === id)
+
   // --- Handlers ---
   function startEdit(section: 'sat' | 'core', r: ComputedRow) {
     setEditingKey(`${section}:${r.ticker}`)
@@ -193,15 +217,26 @@ export function Portfolio({
       shares: String(r.shares || ''),
       cost: String(r.isTHB ? (r.costThb ?? '') : (r.costUsd ?? '')),
       nav: String(r.isTHB ? (r.navThb ?? r.price ?? '') : ''),
-      satGroup: r.satGroup ?? 'coreGrowth',
+      category_id: r.category_id ?? null,
+      stop_loss_pct: r.stop_loss_pct ? String(r.stop_loss_pct * 100) : '',
+      catalyst: r.catalyst ?? '',
+      catalyst_date: r.catalyst_date ?? '',
     })
   }
 
   function saveEdit(section: 'sat' | 'core', ticker: string, isTHB?: boolean) {
     const shares = parseFloat(editForm.shares) || 0
     const cost = parseFloat(editForm.cost) || 0
+    const stopLossPct = editForm.stop_loss_pct ? parseFloat(editForm.stop_loss_pct) / 100 : undefined
     if (section === 'sat') {
-      updateSatelliteHolding(ticker, { shares, costUsd: cost, satGroup: editForm.satGroup as SatGroup })
+      updateSatelliteHolding(ticker, {
+        shares,
+        costUsd: cost,
+        category_id: editForm.category_id,
+        stop_loss_pct: stopLossPct,
+        catalyst: editForm.catalyst || undefined,
+        catalyst_date: editForm.catalyst_date || undefined,
+      })
     } else if (isTHB) {
       const nav = parseFloat(editForm.nav) || 0
       updateCoreHolding(ticker, { shares, costThb: cost, navThb: nav })
@@ -214,7 +249,7 @@ export function Portfolio({
   function startAdd(section: 'sat' | 'core') {
     setEditingKey(null)
     setAddingTo(section)
-    setAddForm({ ticker: '', shares: '', cost: '', isTHB: false, satGroup: 'coreGrowth' })
+    setAddForm({ ticker: '', shares: '', cost: '', isTHB: false, category_id: null })
   }
 
   function confirmAdd() {
@@ -223,13 +258,33 @@ export function Portfolio({
     const shares = parseFloat(addForm.shares) || 0
     const cost = parseFloat(addForm.cost) || 0
     if (addingTo === 'sat') {
-      addSatelliteHolding({ ticker, shares, costUsd: cost, satGroup: addForm.satGroup })
+      if (!addForm.category_id && categoryConfigs.length > 0) {
+        // Show assignment modal before saving
+        setAssignModal({ open: true, ticker })
+        return
+      }
+      addSatelliteHolding({ ticker, shares, costUsd: cost, category_id: addForm.category_id ?? null })
+      setAddingTo(null)
     } else if (addingTo === 'core') {
       addCoreHolding(addForm.isTHB
         ? { ticker, shares, costThb: cost, isTHB: true, navThb: 0 }
         : { ticker, shares, costUsd: cost })
+      setAddingTo(null)
     }
+  }
+
+  function handleAssignAndAdd(categoryId: string) {
+    const ticker = addForm.ticker.trim().toUpperCase()
+    const shares = parseFloat(addForm.shares) || 0
+    const cost = parseFloat(addForm.cost) || 0
+    addSatelliteHolding({ ticker, shares, costUsd: cost, category_id: categoryId })
+    setAssignModal(null)
     setAddingTo(null)
+  }
+
+  function handleReassign(ticker: string, categoryId: string) {
+    updateSatelliteHolding(ticker, { category_id: categoryId })
+    setReassignModal(null)
   }
 
   function startCashEdit(section: 'sat' | 'core') {
@@ -262,9 +317,53 @@ export function Portfolio({
   const tdBase = 'px-3 py-2.5 text-sm whitespace-nowrap'
   const colHeaders = [t.colTicker, t.colShares, t.colCost, t.colPrice, t.colMktVal, t.colPnl, '']
 
+  // --- Stop-loss helper ---
+  function StopLossInfo({ r }: { r: ComputedRow }) {
+    if (!r.stop_loss_pct || !r.costUsd || !r.price) {
+      return <span className="text-[9px] text-ink-mute/60">{t.stopLossNoSet}</span>
+    }
+    const stopPrice = r.costUsd * (1 - r.stop_loss_pct)
+    const distancePct = ((r.price - stopPrice) / r.price) * 100
+    const below = r.price < stopPrice
+    const stopColor = below
+      ? 'text-loss font-normal'
+      : distancePct < 5
+        ? 'text-loss'
+        : distancePct < 10
+          ? 'text-warning'
+          : 'text-gain'
+    return (
+      <span className={`text-[9px] ${stopColor}`}>
+        {below
+          ? `${t.belowStop} $${stopPrice.toFixed(2)}`
+          : `$${stopPrice.toFixed(2)} · ${distancePct.toFixed(1)}% ${t.distanceToStop}`
+        }
+      </span>
+    )
+  }
+
+  // --- Catalyst helper ---
+  function CatalystTag({ r }: { r: ComputedRow }) {
+    if (!r.catalyst) return null
+    const today = new Date()
+    const daysUntil = r.catalyst_date
+      ? Math.floor((new Date(r.catalyst_date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      : null
+    const soon = daysUntil !== null && daysUntil >= 0 && daysUntil <= 14
+    return (
+      <span className={`text-[9px] px-1.5 rounded-sm font-normal w-fit ${
+        soon ? 'bg-warning/15 text-warning' : 'bg-canvas-soft text-ink-mute'
+      }`}>
+        {r.catalyst}{r.catalyst_date ? ` · ${r.catalyst_date}` : ''}
+        {soon && ` (${t.catalystSoon})`}
+      </span>
+    )
+  }
+
   // --- Row renderers ---
   function renderViewRow(section: 'sat' | 'core', r: ComputedRow) {
     const isGold = r.isTHB
+    const cat = section === 'sat' ? catById(r.category_id) : undefined
     return (
       <tr key={r.ticker} className="border-b border-hairline transition-colors hover:bg-canvas-soft group">
         <td className={tdBase}>
@@ -273,15 +372,30 @@ export function Portfolio({
               ? <TickerBadge ticker={r.ticker} />
               : <span className="text-ink-mute text-xs">{r.ticker}</span>
             }
-            {section === 'sat' && r.satGroup && (
-              <span className={`text-[9px] px-1.5 rounded-sm font-normal w-fit ${
-                r.satGroup === 'coreGrowth' ? 'text-primary-deep bg-primary-subdued'
-                : r.satGroup === 'defensive' ? 'text-emerald-700 bg-emerald-50'
-                : 'text-amber-700 bg-amber-50'
-              }`}>
-                {r.satGroup === 'coreGrowth' ? 'Core Growth' : r.satGroup === 'defensive' ? 'Defensive' : 'Small Cap AI'}
-              </span>
+            {section === 'sat' && (
+              <div className="flex items-center gap-1 flex-wrap">
+                {cat ? (
+                  <span
+                    className="text-[9px] px-1.5 rounded-sm font-normal w-fit flex items-center gap-1"
+                    style={{ backgroundColor: `${cat.colour_hex}18`, color: cat.colour_hex }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: cat.colour_hex }} />
+                    {cat.label}
+                  </span>
+                ) : r.shares > 0 ? (
+                  <button
+                    onClick={() => setReassignModal({ open: true, ticker: r.ticker })}
+                    className="text-[9px] px-1.5 rounded-sm font-normal text-warning bg-warning/10 hover:bg-warning/20 transition-colors"
+                  >
+                    {t.unassigned} — {t.assignCategory}
+                  </button>
+                ) : null}
+              </div>
             )}
+            {section === 'sat' && r.shares > 0 && (
+              <StopLossInfo r={r} />
+            )}
+            {section === 'sat' && <CatalystTag r={r} />}
           </div>
         </td>
         <td className={`${tdBase} tabular text-ink-mute`}>
@@ -306,8 +420,15 @@ export function Portfolio({
           pct={fmtPct(r.pnlPct)}
           isLoading={isLoading && r.shares > 0 && !isGold}
         />
-        <td className={`${tdBase} w-16`}>
+        <td className={`${tdBase} w-20`}>
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            {section === 'sat' && r.shares > 0 && (
+              <button
+                onClick={() => setReassignModal({ open: true, ticker: r.ticker })}
+                className="w-6 h-6 flex items-center justify-center text-ink-mute hover:text-primary rounded text-xs"
+                title={t.reassign}
+              >⇄</button>
+            )}
             <button
               onClick={() => startEdit(section, r)}
               className="w-6 h-6 flex items-center justify-center text-ink-mute hover:text-primary rounded text-sm"
@@ -325,9 +446,31 @@ export function Portfolio({
   }
 
   function renderEditRow(section: 'sat' | 'core', r: ComputedRow) {
+    const sortedCats = [...categoryConfigs].sort((a, b) => a.sort_order - b.sort_order)
     return (
       <tr key={r.ticker} className="border-b border-hairline bg-primary/[0.02]">
-        <td className={tdBase}><TickerBadge ticker={r.ticker} /></td>
+        <td className={tdBase}>
+          <div className="flex flex-col gap-1">
+            <TickerBadge ticker={r.ticker} />
+            {section === 'sat' && (
+              <input
+                type="text"
+                placeholder={t.catalyst}
+                value={editForm.catalyst}
+                onChange={(e) => setEditForm((f) => ({ ...f, catalyst: e.target.value }))}
+                className={`${cellInput} text-[10px]`}
+              />
+            )}
+            {section === 'sat' && (
+              <input
+                type="date"
+                value={editForm.catalyst_date}
+                onChange={(e) => setEditForm((f) => ({ ...f, catalyst_date: e.target.value }))}
+                className={`${cellInput} text-[10px]`}
+              />
+            )}
+          </div>
+        </td>
         <td className={`${tdBase} w-24`}>
           <input
             type="number" min="0" step="0.0001"
@@ -356,15 +499,25 @@ export function Portfolio({
                 placeholder="NAV"
               />
             : section === 'sat'
-              ? <select
-                  value={editForm.satGroup}
-                  onChange={(e) => setEditForm((f) => ({ ...f, satGroup: e.target.value }))}
-                  className="rounded border border-hairline-input bg-canvas px-2 py-1 text-xs text-ink focus:outline-none focus:border-primary transition-colors"
-                >
-                  <option value="coreGrowth">Core Growth</option>
-                  <option value="smallCapAI">Small Cap AI</option>
-                  <option value="defensive">Defensive</option>
-                </select>
+              ? <div className="flex flex-col gap-1">
+                  <select
+                    value={editForm.category_id ?? ''}
+                    onChange={(e) => setEditForm((f) => ({ ...f, category_id: e.target.value || null }))}
+                    className="rounded border border-hairline-input bg-canvas px-2 py-1 text-xs text-ink focus:outline-none focus:border-primary transition-colors"
+                  >
+                    <option value="">{t.unassigned}</option>
+                    {sortedCats.map((c) => (
+                      <option key={c.id} value={c.id}>{c.label}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="number" min="0" max="100" step="1"
+                    value={editForm.stop_loss_pct}
+                    onChange={(e) => setEditForm((f) => ({ ...f, stop_loss_pct: e.target.value }))}
+                    className={`${cellInput} text-[10px]`}
+                    placeholder="Stop % (e.g. 15)"
+                  />
+                </div>
               : <span className="tabular text-xs text-ink-mute">{fmtUsd(r.price ?? 0)}</span>
           }
         </td>
@@ -387,6 +540,7 @@ export function Portfolio({
   }
 
   function renderAddRow(section: 'sat' | 'core') {
+    const sortedCats = [...categoryConfigs].sort((a, b) => a.sort_order - b.sort_order)
     return (
       <tr className="border-b border-hairline bg-primary/[0.02]">
         <td className={tdBase}>
@@ -420,13 +574,14 @@ export function Portfolio({
         <td className={tdBase}>
           {section === 'sat'
             ? <select
-                value={addForm.satGroup}
-                onChange={(e) => setAddForm((f) => ({ ...f, satGroup: e.target.value as SatGroup }))}
+                value={addForm.category_id ?? ''}
+                onChange={(e) => setAddForm((f) => ({ ...f, category_id: e.target.value || null }))}
                 className="rounded border border-hairline-input bg-canvas px-2 py-1 text-xs text-ink focus:outline-none focus:border-primary transition-colors"
               >
-                <option value="coreGrowth">Core Growth</option>
-                <option value="smallCapAI">Small Cap AI</option>
-                <option value="defensive">Defensive</option>
+                <option value="">{sortedCats.length > 0 ? t.unassigned : t.noCategoriesYet}</option>
+                {sortedCats.map((c) => (
+                  <option key={c.id} value={c.id}>{c.label}</option>
+                ))}
               </select>
             : <label className="flex items-center gap-1.5 cursor-pointer">
                 <input
@@ -504,6 +659,28 @@ export function Portfolio({
       {isError && (
         <div className="bg-warning/8 border border-warning/30 text-warning text-sm px-4 py-2.5 rounded-lg">
           {t.fetchError}
+        </div>
+      )}
+
+      {/* Position count banner */}
+      {showPositionCountBanner && (
+        <div className="bg-warning/8 border border-warning/30 text-warning text-sm px-4 py-2.5 rounded-lg flex items-center gap-2">
+          <span>⚠</span>
+          <span>
+            {t.positionCountBanner
+              .replace('{n}', String(activePositionCount))
+              .replace('{limit}', String(positionLimit))}
+          </span>
+        </div>
+      )}
+
+      {/* Unassigned warning */}
+      {unassignedCount > 0 && (
+        <div className="bg-warning/8 border border-warning/30 text-warning text-sm px-4 py-2.5 rounded-lg flex items-center gap-2">
+          <span className="px-2 py-0.5 rounded-pill bg-warning/20 text-xs font-normal border border-warning/30">
+            {unassignedCount}
+          </span>
+          <span>{t.unassigned} — {t.unassignedDesc}</span>
         </div>
       )}
 
@@ -684,6 +861,24 @@ export function Portfolio({
           {t.btnCopyForClaude}
         </button>
       </div>
+
+      {/* Category assignment modal (new position) */}
+      {assignModal?.open && (
+        <CategoryAssignModal
+          ticker={assignModal.ticker}
+          onAssign={handleAssignAndAdd}
+          onDismiss={() => setAssignModal(null)}
+        />
+      )}
+
+      {/* Reassign modal (existing position) */}
+      {reassignModal?.open && (
+        <CategoryAssignModal
+          ticker={reassignModal.ticker}
+          onAssign={(catId) => handleReassign(reassignModal.ticker, catId)}
+          onDismiss={() => setReassignModal(null)}
+        />
+      )}
     </div>
   )
 }

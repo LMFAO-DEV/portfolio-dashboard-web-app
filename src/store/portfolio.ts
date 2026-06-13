@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
   Holding, FxRate, MtsGoldNav, DcaSettings, Price, Lang, SatTargets,
-  HistoryPoint, PortfolioSnapshot, Transaction, Dividend, Alert,
+  HistoryPoint, PortfolioSnapshot, Transaction, Dividend, Alert, CategoryConfig,
 } from '../types'
 import { derivePosition } from '../utils/calc'
 
@@ -130,6 +130,22 @@ interface PortfolioStore {
   driftThresholdPct: number
   setDriftThresholdPct: (v: number) => void
 
+  /** User-defined satellite categories. Empty = not yet configured. */
+  categoryConfigs: CategoryConfig[]
+  addCategoryConfig: (c: CategoryConfig) => void
+  updateCategoryConfig: (id: string, data: Partial<CategoryConfig>) => void
+  removeCategoryConfig: (id: string) => void
+  reorderCategoryConfigs: (configs: CategoryConfig[]) => void
+  setCategoryConfigs: (configs: CategoryConfig[]) => void
+
+  /** Max satellite positions before count warning (default 8). */
+  positionLimit: number
+  setPositionLimit: (n: number) => void
+
+  /** True once user has completed (or skipped) the category setup screen. */
+  categorySetupDone: boolean
+  setCategorySetupDone: (done: boolean) => void
+
   importState: (snapshot: Partial<PortfolioSnapshot>) => void
 
   resetToDefault: () => void
@@ -225,6 +241,30 @@ export const usePortfolioStore = create<PortfolioStore>()(
       driftThresholdPct: 10,
       setDriftThresholdPct: (driftThresholdPct) => set({ driftThresholdPct }),
 
+      categoryConfigs: [],
+      addCategoryConfig: (c) =>
+        set((s) => ({ categoryConfigs: [...s.categoryConfigs, c] })),
+      updateCategoryConfig: (id, data) =>
+        set((s) => ({
+          categoryConfigs: s.categoryConfigs.map((c) => c.id === id ? { ...c, ...data } : c),
+        })),
+      removeCategoryConfig: (id) =>
+        set((s) => ({
+          categoryConfigs: s.categoryConfigs.filter((c) => c.id !== id),
+          // Unassign any satellite holding that referenced this category
+          satellite: s.satellite.map((h) =>
+            h.category_id === id ? { ...h, category_id: null } : h,
+          ),
+        })),
+      reorderCategoryConfigs: (configs) => set({ categoryConfigs: configs }),
+      setCategoryConfigs: (categoryConfigs) => set({ categoryConfigs }),
+
+      positionLimit: 8,
+      setPositionLimit: (positionLimit) => set({ positionLimit }),
+
+      categorySetupDone: false,
+      setCategorySetupDone: (categorySetupDone) => set({ categorySetupDone }),
+
       importState: (snapshot) =>
         set((s) => ({
           satellite: snapshot.satellite ?? s.satellite,
@@ -236,6 +276,8 @@ export const usePortfolioStore = create<PortfolioStore>()(
           satTargets: snapshot.satTargets ?? s.satTargets,
           transactions: snapshot.transactions ?? s.transactions,
           dividends: snapshot.dividends ?? s.dividends,
+          categoryConfigs: snapshot.categoryConfigs ?? s.categoryConfigs,
+          positionLimit: snapshot.positionLimit ?? s.positionLimit,
         })),
 
       resetToDefault: () =>
@@ -250,6 +292,8 @@ export const usePortfolioStore = create<PortfolioStore>()(
           dividends: [],
           prices: {},
           fxRate: { rate: 0, fetchedAt: '' },
+          categoryConfigs: [],
+          categorySetupDone: false,
         }),
     }),
     { name: 'portfolio-state-v2' },

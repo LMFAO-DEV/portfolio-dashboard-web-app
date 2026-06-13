@@ -2,6 +2,14 @@ export type Lang = 'th' | 'en'
 
 export type SatGroup = 'coreGrowth' | 'smallCapAI' | 'defensive'
 
+export interface CategoryConfig {
+  id: string
+  label: string
+  target_pct: number
+  colour_hex: string
+  sort_order: number
+}
+
 export interface Holding {
   ticker: string
   shares: number
@@ -10,11 +18,20 @@ export interface Holding {
   isTHB?: boolean
   targetPct?: number
   navThb?: number
+  /** @deprecated Use category_id instead */
   satGroup?: SatGroup
+  /** User-defined category ID (satellite only). null = Unassigned. */
+  category_id?: string | null
   /** Weighted-avg USD/THB rate at entry, derived from transactions. Enables FX attribution. */
   entryFxRate?: number
   /** Price target alert threshold (USD for USD assets, THB for THB assets). */
   targetPrice?: number
+  /** Stop-loss threshold, e.g. 0.15 for -15% from avg cost. */
+  stop_loss_pct?: number
+  /** Upcoming event label, e.g. "Q4 earnings". */
+  catalyst?: string
+  /** ISO date string for catalyst event, e.g. "2026-09-02". */
+  catalyst_date?: string
 }
 
 export type Port = 'core' | 'satellite'
@@ -83,7 +100,7 @@ export type AlertSeverity = 'info' | 'warning' | 'danger'
 export interface Alert {
   id: string
   severity: AlertSeverity
-  rule: 'drift' | 'goldStale' | 'priceTarget'
+  rule: 'drift' | 'goldStale' | 'priceTarget' | 'stopLoss' | 'pnlAlert' | 'catalyst' | 'positionCount' | 'cashReserve' | 'unassigned' | 'catDeviation'
   title: string
   body: string
   createdAt: string // ISO
@@ -100,4 +117,6 @@ export interface PortfolioSnapshot {
   satTargets: SatTargets
   transactions?: Transaction[]
   dividends?: Dividend[]
+  categoryConfigs?: CategoryConfig[]
+  positionLimit?: number
 }
