@@ -20,7 +20,7 @@ export function computeTotals(
   }, 0)
   const coreEquity = core.reduce((s, h) => {
     if (!h.shares) return s
-    if (h.isTHB) return s + h.shares * (h.navThb ?? mtsGoldNav.value)
+    if (h.isTHB) return s + h.shares * (prices[h.ticker] ?? h.navThb ?? mtsGoldNav.value)
     return s + h.shares * (prices[h.ticker] ?? 0) * fxRate
   }, 0)
   const satThb = satEquity + satelliteCashThb

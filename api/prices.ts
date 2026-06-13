@@ -9,6 +9,13 @@ interface FrankfurterRates {
   rates: Record<string, number>
 }
 
+interface YahooChartResult {
+  meta: { regularMarketPrice: number }
+}
+interface YahooChartResponse {
+  chart: { result: YahooChartResult[] | null }
+}
+
 function send(res: ServerResponse, status: number, body: unknown): void {
   res.writeHead(status, {
     'Content-Type': 'application/json',
@@ -33,6 +40,23 @@ async function fetchQuote(symbol: string): Promise<number | null> {
     if (!resp.ok) return null
     const data = (await resp.json()) as FinnhubQuote
     return data.c > 0 ? data.c : null
+  } catch {
+    return null
+  }
+}
+
+async function fetchGoldUsd(): Promise<number | null> {
+  try {
+    const resp = await fetch(
+      'https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1d&range=1d',
+      {
+        signal: AbortSignal.timeout(10_000),
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+      },
+    )
+    if (!resp.ok) return null
+    const data = (await resp.json()) as YahooChartResponse
+    return data?.chart?.result?.[0]?.meta?.regularMarketPrice ?? null
   } catch {
     return null
   }
@@ -64,16 +88,12 @@ export default async function handler(
   const url = new URL(req.url ?? '/', 'http://localhost')
   const symbolsParam = url.searchParams.get('symbols') ?? ''
 
-  if (!symbolsParam) {
-    send(res, 200, { prices: {}, fxRate: 0 })
-    return
-  }
-
   const symbols = symbolsParam.split(',').map((s) => s.trim()).filter(Boolean)
 
-  const [quoteResults, fxRate] = await Promise.all([
+  const [quoteResults, fxRate, xauUsd] = await Promise.all([
     Promise.all(symbols.map((s) => fetchQuote(s))),
     fetchUsdThb(),
+    fetchGoldUsd(),
   ])
 
   const prices: Record<string, number> = {}
@@ -82,5 +102,5 @@ export default async function handler(
     if (price != null) prices[sym] = price
   })
 
-  send(res, 200, { prices, fxRate: fxRate ?? 0 })
+  send(res, 200, { prices, fxRate: fxRate ?? 0, xauUsd: xauUsd ?? 0 })
 }

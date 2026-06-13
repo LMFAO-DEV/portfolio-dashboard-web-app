@@ -166,7 +166,7 @@ export function Settings({ open, onClose }: SettingsProps) {
           <section>
             <h3 className={sectionHeadCls}>{t.targetPriceLabel}</h3>
             <div className="space-y-2">
-              {[...core, ...satellite].filter((h) => h.shares > 0).map((h) => (
+              {[...core, ...satellite].filter((h) => h.shares > 0 && !h.isTHB).map((h) => (
                 <div key={h.ticker} className="flex items-center justify-between">
                   <span className="text-sm font-mono text-ink">{h.ticker}</span>
                   <input

@@ -127,7 +127,7 @@ export function Portfolio({
 
   const coreRows: ComputedRow[] = core.map((h) => {
     if (h.isTHB) {
-      const nav = h.navThb ?? mtsGoldNav.value
+      const nav = prices[h.ticker] ?? h.navThb ?? mtsGoldNav.value
       const cost = h.costThb ?? 0
       const mktValThb = h.shares * nav
       const pnlThb = (nav - cost) * h.shares
@@ -285,7 +285,7 @@ export function Portfolio({
           </div>
         </td>
         <td className={`${tdBase} tabular text-ink-mute`}>
-          {r.shares ? r.shares.toFixed(isGold ? 0 : 4) : '—'}
+          {r.shares ? <>{r.shares.toFixed(4)}{isGold && <span className="text-ink-mute font-light text-xs ml-1">oz</span>}</> : '—'}
         </td>
         <td className={`${tdBase} tabular text-ink-mute`}>
           {isGold ? fmtThbRaw(r.costThb ?? 0) : fmtUsd(r.costUsd ?? 0)}
