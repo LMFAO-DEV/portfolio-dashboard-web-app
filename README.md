@@ -40,8 +40,8 @@ A personal investment portfolio tracker for THB-based investors. Tracks Core + S
 ### Alert Engine (🔔 in TopBar)
 
 - **Drift alerts**: Core/Satellite split and per-bucket drift beyond a configurable threshold (default 10%)
-- **Gold NAV stale**: warns when MTS-GOLD NAV hasn't been updated in >30 days
-- **Price target alerts**: notifies when a holding is within ±5% of a set target price
+- **Gold NAV stale**: warns when MTS-GOLD NAV hasn't been updated in >30 days (fallback only — live XAU/USD used when available)
+- **Price target alerts**: notifies when a holding is within ±5% of a set target price (USD-denominated assets only)
 - Dismiss per-alert or clear all dismissed; badge count on TopBar
 
 ### Settings Panel
@@ -52,7 +52,7 @@ A personal investment portfolio tracker for THB-based investors. Tracks Core + S
 - Core target allocation % per ticker
 - Satellite target allocation % per bucket
 - DCA settings (Core + Satellite monthly THB)
-- MTS-GOLD NAV manual input
+- MTS-GOLD NAV manual input (fallback when live XAU/USD fetch fails)
 - Export / Import snapshot as JSON (backup + restore)
 - Reset to empty state
 
@@ -79,8 +79,9 @@ A personal investment portfolio tracker for THB-based investors. Tracks Core + S
 | Server state | TanStack Query v5 |
 | Charts | Recharts v3 |
 | HTTP | Axios |
-| Price source | Yahoo Finance `v8/finance/chart` (unofficial, no key) |
-| FX rate | open.er-api.com (free, no key) |
+| Stock prices | Finnhub REST API (free tier, API key via env) |
+| Gold price | Yahoo Finance `v8/finance/chart/GC=F` (XAU/USD, no key) |
+| FX rate | Frankfurter API (free, no key) |
 | Routing | React Router v6 |
 | Deploy | Vercel (serverless function at `api/prices.ts`) |
 
@@ -128,7 +129,7 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-No API keys or environment variables required.
+Set `VITE_FINNHUB_KEY=<your_key>` in `.env.local` for stock price fetching. Gold and FX need no keys.
 
 For production deploy:
 
@@ -139,11 +140,27 @@ vercel --prod
 
 ## Price Fetching
 
-Prices are fetched from Yahoo Finance `v8/finance/chart` — one batch call per load. USD/THB rate from `open.er-api.com`. Both cached end-of-day; use ↻ to refresh manually.
+Three sources, all server-side (dev: Vite plugin; prod: Vercel serverless at `api/prices.ts`):
 
-In development, a Vite plugin intercepts `/api/prices` and calls Yahoo Finance server-side (bypasses browser CORS). In production, the same logic runs as a Vercel serverless function.
+| Data | Source |
+| --- | --- |
+| Stock/ETF quotes | Finnhub REST (`/quote`) — requires `VITE_FINNHUB_KEY` |
+| USD/THB FX rate | Frankfurter API (`/latest?from=USD&to=THB`) — no key |
+| Gold (XAU/USD) | Yahoo Finance `GC=F` futures — no key |
 
-MTS-GOLD (Thai mutual fund) is not on Yahoo Finance — enter NAV manually in Settings.
+All three are fetched in parallel per `/api/prices` request. Results cached end-of-day in React Query; use ↻ to force refresh.
+
+MTS-GOLD price is derived from the live XAU/USD rate × shares (oz). The manual NAV field in Settings is a fallback only (used if the GC=F fetch fails).
+
+## Scripts
+
+| Script | What it does |
+| --- | --- |
+| `npm run dev` | Dev server at `http://localhost:5173` |
+| `npm run build` | TypeScript check + Vite production build → `dist/` |
+| `npm run preview` | Serve production build locally |
+| `npm run lint` | ESLint |
+| `npm run test:ui-e2e-mtsgold` | Playwright E2E: adds MTS-GOLD, verifies live XAU/USD price displayed in Portfolio tab (requires dev server running) |
 
 ## Transaction Ledger & FX Attribution
 
